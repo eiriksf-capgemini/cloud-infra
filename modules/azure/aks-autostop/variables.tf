@@ -31,6 +31,17 @@ variable "timezone" {
   default     = "Europe/Oslo"
 }
 
+variable "timezone_utc_offset" {
+  description = "UTC offset of `timezone` at the moment of the first apply, e.g. '+02:00' (CEST) or '+01:00' (CET). Azure derives the schedule's wall-clock time from start_time, so a 'Z' time would be read as UTC. Only the first apply uses it; later plans ignore start_time."
+  type        = string
+  default     = "+01:00"
+
+  validation {
+    condition     = can(regex("^[+-]([01][0-9]):[0-5][0-9]$", var.timezone_utc_offset))
+    error_message = "timezone_utc_offset must look like +02:00 or -05:00."
+  }
+}
+
 variable "stop_time" {
   description = "Daily stop time, HH:MM in `timezone`."
   type        = string

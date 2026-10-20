@@ -10,7 +10,8 @@
 # `tofu destroy` the cluster stack for long breaks.
 
 locals {
-  # Schedules must start in the future; anchor to tomorrow at the requested time.
+  # Schedules must start in the future; anchor to tomorrow at the requested time, expressed
+  # with the zone's UTC offset so Azure derives the right wall-clock time in `timezone`.
   # start_time is then ignored on later plans so the schedule is not recreated daily.
   tomorrow = formatdate("YYYY-MM-DD", timeadd(timestamp(), "24h"))
 }
@@ -54,7 +55,7 @@ resource "azurerm_automation_schedule" "stop" {
   frequency               = "Day"
   interval                = 1
   timezone                = var.timezone
-  start_time              = "${local.tomorrow}T${var.stop_time}:00Z"
+  start_time              = "${local.tomorrow}T${var.stop_time}:00${var.timezone_utc_offset}"
   description             = "Stop the cluster every day at ${var.stop_time} ${var.timezone}."
 
   lifecycle {
@@ -84,7 +85,7 @@ resource "azurerm_automation_schedule" "start" {
   interval                = 1
   week_days               = var.start_week_days
   timezone                = var.timezone
-  start_time              = "${local.tomorrow}T${var.start_time}:00Z"
+  start_time              = "${local.tomorrow}T${var.start_time}:00${var.timezone_utc_offset}"
   description             = "Start the cluster on ${join(", ", var.start_week_days)} at ${var.start_time} ${var.timezone}."
 
   lifecycle {

@@ -56,6 +56,12 @@ variable "automation_location" {
   default     = "northeurope"
 }
 
+variable "timezone_utc_offset" {
+  description = "UTC offset of Europe/Oslo at first apply: +02:00 (CEST, until 25 Oct 2026) or +01:00 (CET). Only used to anchor the schedules."
+  type        = string
+  default     = "+02:00"
+}
+
 variable "auto_start_time" {
   description = "Weekday time (HH:MM, Europe/Oslo) to start the cluster. null = start manually with `make aks-start`."
   type        = string

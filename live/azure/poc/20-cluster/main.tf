@@ -53,5 +53,6 @@ module "autostop" {
   stop_time                   = var.auto_stop_time
   start_time                  = var.auto_start_time
   timezone                    = "Europe/Oslo"
+  timezone_utc_offset         = var.timezone_utc_offset
   tags                        = local.tags
 }

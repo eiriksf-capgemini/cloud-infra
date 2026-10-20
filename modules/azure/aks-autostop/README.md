@@ -10,6 +10,7 @@ evening and optionally start it on weekday mornings. Runs on the Automation free
 | `start_time` | `null` | set e.g. `08:00` to auto-start; null = start by hand |
 | `start_week_days` | Mon–Fri | only used when `start_time` is set |
 | `timezone` | `Europe/Oslo` | IANA name |
+| `timezone_utc_offset` | `+01:00` | offset of `timezone` at first apply (`+02:00` in summer); used only to anchor start_time |
 
 Manual control from the repo root: `make aks-stop`, `make aks-start`, `make aks-status`.
 
