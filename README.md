@@ -4,7 +4,8 @@ Proof-of-concept infrastructure as code. Azure first, structured so AWS and GCP 
 later. Provisioning is done with **OpenTofu**; everything inside Kubernetes is reconciled by
 **Argo CD** from this repo.
 
-Decisions and their reasoning live in [`docs/adr/`](docs/adr/). Read those three pages first.
+Decisions and their reasoning live in [`docs/adr/`](docs/adr/). Operational summaries live in
+[`docs/runbooks/`](docs/runbooks/) (currently: [Tekton](docs/runbooks/tekton.md)).
 
 ## Layout
 
