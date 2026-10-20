@@ -14,11 +14,18 @@ locals {
   # requested wall-clock time if that is still ahead, otherwise to tomorrow, expressed with
   # the zone's UTC offset so Azure derives the right local time in `timezone`. start_time
   # is ignored on later plans so schedules are not recreated daily.
-  today    = formatdate("YYYY-MM-DD", timestamp())
-  tomorrow = formatdate("YYYY-MM-DD", timeadd(timestamp(), "24h"))
-  earliest = timeadd(timestamp(), "10m")
+  #
+  # "Today" is the date in `timezone`, not UTC: timestamp() is UTC, so shift it by the
+  # offset first (otherwise 00:00-02:00 Oslo would still count as yesterday).
+  offset_sign     = substr(var.timezone_utc_offset, 0, 1) == "-" ? "-" : ""
+  offset_duration = "${local.offset_sign}${tonumber(substr(var.timezone_utc_offset, 1, 2))}h${tonumber(substr(var.timezone_utc_offset, 4, 2))}m"
+  local_now       = timeadd(timestamp(), local.offset_duration)
+  today           = formatdate("YYYY-MM-DD", local.local_now)
+  tomorrow        = formatdate("YYYY-MM-DD", timeadd(local.local_now, "24h"))
+  earliest        = timeadd(timestamp(), "10m")
 
-  first_run = { for t in concat(var.stop_times, var.start_time == null ? [] : [var.start_time]) :
+  # Keyed by HH:MM; distinct() because a start time may coincide with a stop time.
+  first_run = { for t in distinct(concat(var.stop_times, var.start_time == null ? [] : [var.start_time])) :
     t => timecmp("${local.today}T${t}:00${var.timezone_utc_offset}", local.earliest) > 0 ?
     "${local.today}T${t}:00${var.timezone_utc_offset}" : "${local.tomorrow}T${t}:00${var.timezone_utc_offset}"
   }
