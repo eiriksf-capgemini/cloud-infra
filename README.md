@@ -25,7 +25,7 @@ live/<cloud>/<env>/ one directory per stack, each with its own state
 
 gitops/             what Argo CD reconciles INTO the cluster
   clusters/azure-dev      Helm chart: platform Applications + workload ApplicationSet (environment: dev)
-  apps/<app>/             workloads: kustomize base + overlays/{dev,test,prod}
+  apps/<namespace>/<app>/ workloads: kustomize base + overlays/{dev,test,prod}; `namespace` app holds quotas
   platform/<service>      values.yaml per service (ingress-nginx, cert-manager, external-dns)
   bootstrap/root-app.yaml manual fallback for the root Application
 ```
@@ -87,7 +87,7 @@ kubectl -n argocd port-forward svc/argocd-server 8080:443
 
 Open https://localhost:8080. The `root` Application syncs `gitops/clusters/azure-dev`, which
 installs ingress-nginx and cert-manager and discovers every workload under
-`gitops/apps/*/overlays/dev`. From here on, change the cluster by committing to `gitops/`.
+`gitops/apps/*/*/overlays/dev`. From here on, change the cluster by committing to `gitops/`.
 Adding an application is described in `gitops/apps/README.md`.
 
 Tear down in reverse: `30-gitops` → `20-cluster` → `10-network`; keep `00-tfstate`.

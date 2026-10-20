@@ -1,0 +1,14 @@
+# Default requests/limits for containers that do not set their own, so nothing in the
+# namespace runs unbounded on the small dev node.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: defaults
+spec:
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 10m
+        memory: 32Mi
+      default:
+        memory: 128Mi

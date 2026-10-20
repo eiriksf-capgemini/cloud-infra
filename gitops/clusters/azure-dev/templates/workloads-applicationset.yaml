@@ -1,7 +1,9 @@
 {{- if .Values.workloads.enabled }}
 ---
-# One Application per workload, discovered from Git. Adding an app = adding a directory
-# <workloads.path>/<app>/overlays/{{ .Values.environment }}; no change needed here.
+# One Application per workload, discovered from Git. Layout:
+#   <workloads.path>/<namespace>/<app>/overlays/{{ .Values.environment }}
+# Adding an app = adding such a directory; no change needed here. Application names are
+# <namespace>-<app> so they stay unique across namespaces.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -17,13 +19,15 @@ spec:
         repoURL: {{ .Values.repoURL }}
         revision: {{ .Values.targetRevision }}
         directories:
-          - path: {{ .Values.workloads.path }}/*/overlays/{{ .Values.environment }}
+          - path: {{ .Values.workloads.path }}/*/*/overlays/{{ .Values.environment }}
   template:
     metadata:
-      # path = gitops/apps/<app>/overlays/<env>  ->  segments[2] is the app name
-      name: '{{ `{{ index .path.segments 2 }}` }}'
+      # path = gitops/apps/<namespace>/<app>/overlays/<env>
+      #   segments[2] = namespace, segments[3] = app
+      name: '{{ `{{ index .path.segments 2 }}-{{ index .path.segments 3 }}` }}'
       labels:
-        app.kubernetes.io/name: '{{ `{{ index .path.segments 2 }}` }}'
+        app.kubernetes.io/name: '{{ `{{ index .path.segments 3 }}` }}'
+        namespace: '{{ `{{ index .path.segments 2 }}` }}'
         environment: {{ .Values.environment }}
       finalizers:
         - resources-finalizer.argocd.argoproj.io

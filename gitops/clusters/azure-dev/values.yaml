@@ -10,7 +10,8 @@ project: default
 environment: dev
 
 # Workload app-of-apps: an ApplicationSet discovers every directory matching
-# <workloads.path>/*/overlays/<environment> and creates one Application per app.
+# <workloads.path>/<namespace>/<app>/overlays/<environment> and creates one
+# Application per app, named <namespace>-<app>.
 workloads:
   enabled: true
   path: gitops/apps

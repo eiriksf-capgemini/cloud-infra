@@ -1,9 +1,7 @@
-# gitops/apps — workloads, one directory per application
-
-Each application is a kustomize **base** plus one **overlay per environment**:
+# gitops/apps — workloads, grouped by namespace
 
 ```
-gitops/apps/<app>/
+gitops/apps/<namespace>/<app>/
 ├── base/                 # environment-agnostic manifests
 │   └── kustomization.yaml
 └── overlays/
@@ -12,19 +10,32 @@ gitops/apps/<app>/
     └── prod/             # deployed on clusters whose environment is prod  (none yet)
 ```
 
+- **Namespace folder** = one Kubernetes namespace. Everything inside deploys there.
+- **App folder** = one Argo CD `Application`, named `<namespace>-<app>`.
+- **Environments live inside the app** as kustomize overlays. An environment without an
+  overlay directory is simply not deployed there.
+
 A cluster declares its environment in `gitops/clusters/<cluster>/values.yaml`
 (`environment: dev`). Its `workloads-<env>` ApplicationSet scans
-`gitops/apps/*/overlays/<env>` and creates one Argo CD `Application` per match, named after
-the app, deployed into a namespace of the same name. Nothing else to register.
+`gitops/apps/*/*/overlays/<env>` and creates the Applications. Nothing to register.
+
+## Namespace-level configuration
+
+Put it in a `namespace` app inside the namespace folder: `gitops/apps/<namespace>/namespace/`.
+Its base holds the `Namespace` object itself (labels such as Pod Security Admission levels) and
+a `LimitRange`; each overlay holds the environment's `ResourceQuota`. It is discovered and
+promoted like any other app, as `<namespace>-namespace`. See `demo/namespace` for the pattern.
+
+Argo CD still has `CreateNamespace=true`, so a namespace folder without a `namespace` app
+also works; you just get an unmanaged, unlabelled namespace.
 
 ## Add an application
 
-1. `mkdir -p gitops/apps/<app>/{base,overlays/{dev,test,prod}}`
+1. `mkdir -p gitops/apps/<namespace>/<app>/{base,overlays/{dev,test,prod}}`
 2. Put manifests and a `kustomization.yaml` in `base/`.
-3. In each overlay, a `kustomization.yaml` with `resources: [../../base]`, `namespace: <app>`,
-   and environment-specific patches (replicas, config, ingress host).
-   An environment with no overlay directory is simply not deployed there.
-4. Check it renders: `kubectl kustomize gitops/apps/<app>/overlays/dev`
+3. In each overlay, a `kustomization.yaml` with `resources: [../../base]`,
+   `namespace: <namespace>`, and environment-specific patches (replicas, config, ingress host).
+4. Check it renders: `kubectl kustomize gitops/apps/<namespace>/<app>/overlays/dev`
 5. Commit and push. Argo CD picks it up within its poll interval (3 min) or on refresh.
 
 ## Promote a change dev → test → prod
@@ -34,9 +45,8 @@ Pin images by tag or digest in the overlay so each environment is explicit and r
 
 ## Conventions
 
-- Namespace = app name. Keep one app per namespace.
-- Set resource requests; the dev node is small.
+- Set resource requests; the dev node is small. The namespace `LimitRange` adds defaults.
 - Prefer kustomize for your own apps and Helm (via `gitops/platform`) for third-party charts.
 - Dev-only conveniences (nip.io ingress hosts, debug flags) live in `overlays/dev` only.
 
-`podinfo` is the reference example.
+`demo/podinfo` and `demo/namespace` are the reference examples.
