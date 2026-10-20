@@ -1,0 +1,18 @@
+# ingress-nginx chart values for the POC cluster (one node).
+controller:
+  replicaCount: 1
+  ingressClassResource:
+    default: true
+  service:
+    type: LoadBalancer
+    annotations:
+      # Azure Standard LB needs an HTTP probe path, otherwise nodes are marked unhealthy.
+      service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /healthz
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+  admissionWebhooks:
+    enabled: true

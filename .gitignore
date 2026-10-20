@@ -1,0 +1,33 @@
+# OpenTofu / Terraform working files
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Variable files may contain secrets; commit only the examples
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# Local kubeconfigs and env
+kubeconfig*
+.env
+.envrc
+
+# Helm chart build artifacts
+gitops/**/charts/
+gitops/**/Chart.lock
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

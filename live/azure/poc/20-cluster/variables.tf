@@ -1,0 +1,53 @@
+variable "subscription_id" {
+  description = "Azure subscription ID. Leave null to use ARM_SUBSCRIPTION_ID / az CLI default."
+  type        = string
+  default     = null
+}
+
+variable "location" {
+  type    = string
+  default = "norwayeast"
+}
+
+variable "name_prefix" {
+  description = "Must match 10-network; used to look up the RG, VNet and subnet by name."
+  type        = string
+  default     = "cloudinfra-poc"
+}
+
+variable "kubernetes_version" {
+  description = "null = AKS default for the region."
+  type        = string
+  default     = null
+}
+
+variable "system_node_pool" {
+  type = object({
+    vm_size    = optional(string, "Standard_D2s_v5")
+    node_count = optional(number, 1)
+    os_disk_gb = optional(number, 64)
+  })
+  default = {}
+}
+
+variable "user_node_pools" {
+  type = map(object({
+    vm_size    = string
+    node_count = optional(number, 1)
+    os_disk_gb = optional(number, 64)
+    labels     = optional(map(string), {})
+    taints     = optional(list(string), [])
+  }))
+  default = {}
+}
+
+variable "admin_group_object_ids" {
+  description = "Entra ID groups that get cluster-admin. Empty is fine for a POC; the deployer is granted admin anyway."
+  type        = list(string)
+  default     = []
+}
+
+variable "tags" {
+  type    = map(string)
+  default = {}
+}

@@ -1,0 +1,33 @@
+# Manual fallback for the root Application that modules/k8s/argocd-bootstrap
+# normally installs via the argo-cd chart's extraObjects. Only needed if you
+# install Argo CD by hand:
+#   kubectl apply -n argocd -f gitops/bootstrap/root-app.yaml
+# Replace REPO_URL first.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/CHANGEME/cloud-infra.git
+    targetRevision: main
+    path: gitops/clusters/azure-poc
+    helm:
+      parameters:
+        - name: repoURL
+          value: https://github.com/CHANGEME/cloud-infra.git
+        - name: targetRevision
+          value: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

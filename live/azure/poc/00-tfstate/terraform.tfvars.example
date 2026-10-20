@@ -1,0 +1,4 @@
+# cp terraform.tfvars.example terraform.tfvars  (tfvars are gitignored)
+# subscription_id = "00000000-0000-0000-0000-000000000000"
+# location        = "norwayeast"
+# name_prefix     = "cloudinfra-poc"

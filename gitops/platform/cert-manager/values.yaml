@@ -1,0 +1,26 @@
+# cert-manager chart values for the POC cluster.
+crds:
+  enabled: true
+  keep: true
+
+replicaCount: 1
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+webhook:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+
+cainjector:
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+
+# ClusterIssuers (Let's Encrypt via HTTP-01 through ingress-nginx, or DNS-01 via
+# Azure DNS + workload identity) are added later as a separate Application.

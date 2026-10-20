@@ -1,0 +1,25 @@
+# external-dns chart values. Disabled in gitops/clusters/azure-poc/values.yaml until:
+#   1. an Azure DNS zone exists,
+#   2. a user-assigned identity with "DNS Zone Contributor" on that zone exists,
+#   3. a federated credential links it to the external-dns service account using
+#      the cluster's oidc_issuer_url (output of live/azure/poc/20-cluster).
+provider:
+  name: azure
+
+serviceAccount:
+  annotations:
+    azure.workload.identity/client-id: "<identity-client-id>"
+
+podLabels:
+  azure.workload.identity/use: "true"
+
+policy: sync
+sources:
+  - ingress
+  - service
+
+# domainFilters:
+#   - example.com
+# extraVolumes / extraVolumeMounts for azure.json are needed when not using
+# workload identity; with workload identity set txtOwnerId and the azure
+# provider's useWorkloadIdentityExtension in azure.json.

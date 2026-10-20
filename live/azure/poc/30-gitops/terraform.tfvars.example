@@ -1,0 +1,4 @@
+# Required: where Argo CD pulls from. For a private repo, also add repo credentials
+# in the argocd namespace (see docs/adr/0003-argocd-for-gitops.md).
+gitops_repo_url = "https://github.com/<org>/cloud-infra.git"
+# gitops_revision = "main"

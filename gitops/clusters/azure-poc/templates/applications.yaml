@@ -1,0 +1,45 @@
+{{- range $name, $app := .Values.apps }}
+{{- if $app.enabled }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: {{ $app.syncWave | default "10" | quote }}
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: {{ $.Values.project }}
+  sources:
+    - repoURL: {{ $app.chartRepoURL }}
+      chart: {{ $app.chart }}
+      targetRevision: {{ $app.chartVersion | quote }}
+      helm:
+        releaseName: {{ $name }}
+        valueFiles:
+          - $values/gitops/platform/{{ $name }}/values.yaml
+    - repoURL: {{ $.Values.repoURL }}
+      targetRevision: {{ $.Values.targetRevision }}
+      ref: values
+  destination:
+    server: {{ $.Values.destinationServer }}
+    namespace: {{ $app.namespace }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      {{- if $app.serverSideApply }}
+      - ServerSideApply=true
+      {{- end }}
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 3m
+{{- end }}
+{{- end }}

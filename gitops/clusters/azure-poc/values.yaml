@@ -1,0 +1,39 @@
+# Overridden by the root Application via Helm parameters (set from OpenTofu),
+# so the real repo URL never needs to live in Git.
+repoURL: https://github.com/CHANGEME/cloud-infra.git
+targetRevision: main
+
+destinationServer: https://kubernetes.default.svc
+project: default
+
+# Platform services. Each becomes a multi-source Application:
+#   source 1: the upstream Helm chart
+#   source 2: this repo, providing gitops/platform/<name>/values.yaml
+apps:
+  ingress-nginx:
+    enabled: true
+    namespace: ingress-nginx
+    chartRepoURL: https://kubernetes.github.io/ingress-nginx
+    chart: ingress-nginx
+    chartVersion: 4.15.1
+    syncWave: "10"
+
+  cert-manager:
+    enabled: true
+    namespace: cert-manager
+    chartRepoURL: https://charts.jetstack.io
+    chart: cert-manager
+    chartVersion: v1.21.2
+    syncWave: "10"
+    # cert-manager CRDs carry large annotations; server-side apply avoids the
+    # "metadata.annotations: Too long" error.
+    serverSideApply: true
+
+  external-dns:
+    # Needs an Azure DNS zone and a workload identity before it can do anything.
+    enabled: false
+    namespace: external-dns
+    chartRepoURL: https://kubernetes-sigs.github.io/external-dns/
+    chart: external-dns
+    chartVersion: 1.19.0
+    syncWave: "20"
