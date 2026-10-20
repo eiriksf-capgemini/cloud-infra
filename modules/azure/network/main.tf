@@ -35,14 +35,16 @@ resource "azurerm_network_security_group" "aks" {
 resource "azurerm_network_security_rule" "ingress" {
   for_each = { for p in var.ingress_allowed_ports : tostring(p) => p }
 
-  name                        = "AllowIngress${each.key}Inbound"
-  priority                    = 1000 + index(var.ingress_allowed_ports, each.value)
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_address_prefix       = var.ingress_source
-  source_port_range           = "*"
-  destination_address_prefix  = var.aks_subnet_cidr
+  name                  = "AllowIngress${each.key}Inbound"
+  priority              = 1000 + index(var.ingress_allowed_ports, each.value)
+  direction             = "Inbound"
+  access                = "Allow"
+  protocol              = "Tcp"
+  source_address_prefix = var.ingress_source
+  source_port_range     = "*"
+  # "*" not the subnet CIDR: AKS load balancer rules use floating IP (DSR), so packets
+  # arrive at the node NIC with the LB's public IP as destination.
+  destination_address_prefix  = "*"
   destination_port_range      = each.key
   resource_group_name         = azurerm_resource_group.this.name
   network_security_group_name = azurerm_network_security_group.aks.name
