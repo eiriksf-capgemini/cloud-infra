@@ -35,16 +35,32 @@ variable "admin_enabled" {
   default     = false
 }
 
-variable "pull_principal_ids" {
-  description = "Principals granted AcrPull, keyed by a stable label (e.g. { aks-kubelet = \"<object-id>\" }). Use for cluster kubelet identities."
-  type        = map(string)
-  default     = {}
+variable "pull_principals" {
+  description = "Principals granted AcrPull, keyed by a stable label, e.g. { aks-kubelet = { object_id = \"<id>\" } }. principal_type defaults to ServicePrincipal (managed identities, app registrations); use User or Group for humans."
+  type = map(object({
+    object_id      = string
+    principal_type = optional(string, "ServicePrincipal")
+  }))
+  default = {}
+
+  validation {
+    condition     = alltrue([for p in var.pull_principals : contains(["ServicePrincipal", "User", "Group"], p.principal_type)])
+    error_message = "principal_type must be ServicePrincipal, User or Group."
+  }
 }
 
-variable "push_principal_ids" {
-  description = "Principals granted AcrPush (push + pull), keyed by a stable label. Use for CI identities."
-  type        = map(string)
-  default     = {}
+variable "push_principals" {
+  description = "Principals granted AcrPush (push + pull), keyed by a stable label; same shape as pull_principals. Use for CI identities."
+  type = map(object({
+    object_id      = string
+    principal_type = optional(string, "ServicePrincipal")
+  }))
+  default = {}
+
+  validation {
+    condition     = alltrue([for p in var.push_principals : contains(["ServicePrincipal", "User", "Group"], p.principal_type)])
+    error_message = "principal_type must be ServicePrincipal, User or Group."
+  }
 }
 
 variable "tags" {

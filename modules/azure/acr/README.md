@@ -16,8 +16,11 @@ environment; environments differ by image tag, pinned in the GitOps overlays.
 | `resource_group_name` | string | – | Resource group |
 | `sku` | string | `"Basic"` | `Basic`, `Standard` or `Premium` |
 | `admin_enabled` | bool | `false` | Shared admin user; keep off |
-| `pull_principal_ids` | map(string) | `{}` | label → object ID granted `AcrPull` |
-| `push_principal_ids` | map(string) | `{}` | label → object ID granted `AcrPush` |
+| `pull_principals` | map(object) | `{}` | label → `{ object_id, principal_type = "ServicePrincipal" }` granted `AcrPull` |
+| `push_principals` | map(object) | `{}` | same shape, granted `AcrPush` |
+
+`principal_type` is `ServicePrincipal` for managed identities and app registrations,
+`User` or `Group` for humans; a wrong type makes Azure reject the assignment.
 | `tags` | map(string) | `{}` | Tags |
 
 Role assignments need the deployer to hold Owner or User Access Administrator on the
@@ -25,7 +28,7 @@ registry's resource group.
 
 ## Outputs
 
-`id`, `name`, `login_server`
+`id`, `name`, `login_server`, `pull_principal_ids`, `push_principal_ids` (what actually holds the roles)
 
 ## Cost note
 

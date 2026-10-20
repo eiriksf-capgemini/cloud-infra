@@ -11,24 +11,25 @@ resource "azurerm_container_registry" "this" {
   tags                = var.tags
 }
 
-# Managed identities are service principals in Entra ID. Setting principal_type
-# avoids the "principal not found" race right after an identity is created.
+# principal_type is passed to ARM so it does not have to look the principal up in
+# Microsoft Graph; without it, assignments for a just-created managed identity can
+# fail with "principal not found" until the directory has replicated.
 resource "azurerm_role_assignment" "pull" {
-  for_each = var.pull_principal_ids
+  for_each = var.pull_principals
 
   scope                = azurerm_container_registry.this.id
   role_definition_name = "AcrPull"
-  principal_id         = each.value
-  principal_type       = "ServicePrincipal"
+  principal_id         = each.value.object_id
+  principal_type       = each.value.principal_type
   description          = "AcrPull for ${each.key} (managed by OpenTofu)"
 }
 
 resource "azurerm_role_assignment" "push" {
-  for_each = var.push_principal_ids
+  for_each = var.push_principals
 
   scope                = azurerm_container_registry.this.id
   role_definition_name = "AcrPush"
-  principal_id         = each.value
-  principal_type       = "ServicePrincipal"
+  principal_id         = each.value.object_id
+  principal_type       = each.value.principal_type
   description          = "AcrPush for ${each.key} (managed by OpenTofu)"
 }

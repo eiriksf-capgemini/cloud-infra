@@ -32,8 +32,8 @@ module "acr" {
 
   # The kubelet identity is what pulls images on the nodes; it is created by AKS,
   # so it is looked up rather than passed from 20-cluster.
-  pull_principal_ids = var.grant_aks_pull ? {
-    aks-kubelet = data.azurerm_kubernetes_cluster.this[0].kubelet_identity[0].object_id
+  pull_principals = var.grant_aks_pull ? {
+    aks-kubelet = { object_id = data.azurerm_kubernetes_cluster.this[0].kubelet_identity[0].object_id }
   } : {}
-  push_principal_ids = var.push_principal_ids
+  push_principals = var.push_principals
 }

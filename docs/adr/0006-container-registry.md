@@ -46,4 +46,11 @@ Entra ID everywhere, and ADR 0005 pins images per environment in kustomize overl
 - Image references are `acrmadbadgerbadger.azurecr.io/<repo>:<tag>`; pods on the POC
   cluster pull without secrets.
 - The registry is public-endpoint only (Basic). Access still requires Entra ID auth.
-- Destroying `25-registry` deletes all images.
+- Destroying `25-registry` deletes all images. There is deliberately no `prevent_destroy`:
+  ADR 0004 wants idle stacks to be destroyable with `make destroy`.
+- While `20-cluster` is destroyed, `25-registry` can only be planned with
+  `grant_aks_pull = false` (the cluster lookup fails otherwise). After the cluster is
+  recreated, set it back to `true` and apply: the kubelet identity has a new object ID and
+  the `AcrPull` assignment is replaced. Images are untouched throughout.
+- `pull_principals` / `push_principals` default to `ServicePrincipal`; a human user or
+  group needs `principal_type` set, or Azure rejects the assignment.

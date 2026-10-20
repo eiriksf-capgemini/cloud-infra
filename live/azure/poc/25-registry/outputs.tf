@@ -13,6 +13,6 @@ output "login_command" {
 }
 
 output "aks_pull_granted_to" {
-  description = "Kubelet identity object ID that holds AcrPull, or 'disabled'."
-  value       = var.grant_aks_pull ? data.azurerm_kubernetes_cluster.this[0].kubelet_identity[0].object_id : "disabled"
+  description = "Kubelet identity object ID that holds AcrPull (from the role assignment itself), or 'disabled'."
+  value       = lookup(module.acr.pull_principal_ids, "aks-kubelet", "disabled")
 }
