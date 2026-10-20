@@ -44,5 +44,8 @@ control plane is free.
 - Azure does not guarantee a cluster stopped for >30 days will start again. Destroy
   instead for long gaps.
 - While stopped, the load balancer rules/IP and OS disks still bill a few USD a month.
-- Free Trial quota is small (typically 4 vCPUs per family per region). Node size and count
-  must fit; check with `az vm list-usage -l <region>` before changing `vm_size`.
+- Free Trial quota is small. Measured in `norwayeast` on 2026-10-20: **4 regular vCPUs and
+  3 Spot vCPUs for the whole region**, 4 per VM family. That means: one 2-vCPU system node,
+  room for one surge node during upgrades, and at most one 2-vCPU Spot node. A 4-vCPU size
+  would leave no surge capacity. Check with `az vm list-usage -l <region> -o table` before
+  changing `vm_size` or `node_count`.
