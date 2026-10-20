@@ -46,6 +46,12 @@ resource "azurerm_automation_runbook" "power" {
   description             = "Stops or starts the AKS cluster via ARM REST."
   content                 = file("${path.module}/runbook.ps1")
   tags                    = var.tags
+
+  lifecycle {
+    # The API reports PowerShell72 runbooks back as "PowerShell"; without this the
+    # runbook would be replaced on every plan.
+    ignore_changes = [runbook_type]
+  }
 }
 
 resource "azurerm_automation_schedule" "stop" {
