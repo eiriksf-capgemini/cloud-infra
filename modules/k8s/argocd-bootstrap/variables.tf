@@ -1,5 +1,5 @@
 variable "namespace" {
-  description = "Namespace for Argo CD."
+  description = "Namespace for Argo CD (and its Application CRs). Created by the Helm release if missing."
   type        = string
   default     = "argocd"
 }

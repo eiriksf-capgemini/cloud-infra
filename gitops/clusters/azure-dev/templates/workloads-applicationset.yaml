@@ -4,6 +4,10 @@
 #   <workloads.path>/<namespace>/<app>/overlays/{{ .Values.environment }}
 # Adding an app = adding such a directory; no change needed here. Application names are
 # <namespace>-<app> so they stay unique across namespaces.
+#
+# Namespaces are NOT auto-created: every namespace folder must contain a `namespace` app
+# that declares the Namespace object (see gitops/apps/README.md). Apps in a brand-new
+# namespace fail their first sync until that app has synced, then succeed on retry.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -45,9 +49,11 @@ spec:
           prune: true
           selfHeal: true
         syncOptions:
-          - CreateNamespace=true
+          # Custom resources (e.g. TektonConfig) may be applied before their CRD exists;
+          # skip the dry-run for those and let the retry pick them up.
+          - SkipDryRunOnMissingResource=true
         retry:
-          limit: 5
+          limit: 10
           backoff:
             duration: 10s
             factor: 2

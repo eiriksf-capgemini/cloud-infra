@@ -27,8 +27,10 @@ live/<cloud>/<env>/ one directory per stack, each with its own state
 
 gitops/             what Argo CD reconciles INTO the cluster
   clusters/azure-dev      Helm chart: platform Applications + workload ApplicationSet (environment: dev)
-  apps/<namespace>/<app>/ workloads: kustomize base + overlays/{dev,test,prod}; `namespace` app holds quotas
-  platform/<service>      values.yaml per service (ingress-nginx, cert-manager, external-dns)
+  apps/<namespace>/<app>/ workloads: kustomize base + overlays/{dev,test,prod}; every namespace
+                          folder has a `namespace` app (Namespace, LimitRange, quotas); no auto-create
+  apps/platform/          Argo CD (bootstrapped) + Tekton + Tekton Dashboard
+  platform/<service>      Helm values (ingress-nginx, cert-manager, external-dns) or kustomize dir (tekton-operator)
   bootstrap/root-app.yaml manual fallback for the root Application
 ```
 
@@ -88,7 +90,7 @@ make output STACK=live/azure/poc/25-registry     # login_server, login_command
 cp live/azure/poc/30-gitops/terraform.tfvars.example live/azure/poc/30-gitops/terraform.tfvars
 #    -> set gitops_repo_url to this repo's clone URL (push the repo first)
 make init apply STACK=live/azure/poc/30-gitops
-kubectl -n argocd port-forward svc/argocd-server 8080:443
+kubectl -n platform port-forward svc/argocd-server 8080:443
 #    admin password: make output STACK=live/azure/poc/30-gitops
 ```
 
@@ -138,7 +140,7 @@ Pin `image:` in `gitops/apps/<app>/overlays/<env>` to `acrmadbadgerbadger.azurec
 make validate-all     # init -backend=false + validate every module and stack; no credentials needed
 make fmt              # tofu fmt -recursive
 make plan  STACK=live/azure/poc/20-cluster
-helm template root gitops/clusters/azure-dev --namespace argocd   # render the app-of-apps
+helm template root gitops/clusters/azure-dev --namespace platform   # render the app-of-apps
 ```
 
 Optional: `pre-commit install` to run fmt/validate on commit.

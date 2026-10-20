@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: platform
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    pods: "100"

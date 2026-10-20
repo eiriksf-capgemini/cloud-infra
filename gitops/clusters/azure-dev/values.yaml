@@ -17,9 +17,11 @@ workloads:
   path: gitops/apps
   syncWave: "30"
 
-# Platform services. Each becomes a multi-source Application:
-#   source 1: the upstream Helm chart
-#   source 2: this repo, providing gitops/platform/<name>/values.yaml
+# Cluster-level platform services (third-party, each in its own namespace).
+#  - with `chart`: multi-source Application = upstream Helm chart + gitops/platform/<name>/values.yaml
+#  - without `chart`: kustomize directory gitops/platform/<name>/ (e.g. upstream release YAML)
+# Namespaced platform tooling that belongs to the `platform` namespace (Tekton, dashboards)
+# lives under gitops/apps/platform/ instead and is discovered by the workloads ApplicationSet.
 apps:
   ingress-nginx:
     enabled: true
@@ -54,6 +56,16 @@ apps:
         jqPathExpressions:
           - .webhooks[].clientConfig.caBundle
           - .webhooks[].namespaceSelector.matchExpressions[] | select(.key == "kubernetes.azure.com/managedby" or .key == "control-plane")
+
+  tekton-operator:
+    # Tekton Operator (upstream release YAML, pinned in gitops/platform/tekton-operator, v0.77.0).
+    # Installs itself into tekton-operator; the TektonConfig in gitops/apps/platform/tekton
+    # then targets the platform namespace. Operator's own namespace comes from the YAML.
+    enabled: true
+    namespace: tekton-operator
+    createNamespace: false
+    serverSideApply: true
+    syncWave: "20"
 
   external-dns:
     # Needs an Azure DNS zone and a workload identity before it can do anything.

@@ -26,8 +26,9 @@ Its base holds the `Namespace` object itself (labels such as Pod Security Admiss
 a `LimitRange`; each overlay holds the environment's `ResourceQuota`. It is discovered and
 promoted like any other app, as `<namespace>-namespace`. See `demo/namespace` for the pattern.
 
-Argo CD still has `CreateNamespace=true`, so a namespace folder without a `namespace` app
-also works; you just get an unmanaged, unlabelled namespace.
+Namespaces are **not** auto-created (no `CreateNamespace`). A namespace folder without a
+`namespace` app will have all its other apps fail with "namespace not found" until one is
+added. Apps added together with a new namespace fail their first sync and succeed on retry.
 
 ## Add an application
 
@@ -48,5 +49,13 @@ Pin images by tag or digest in the overlay so each environment is explicit and r
 - Set resource requests; the dev node is small. The namespace `LimitRange` adds defaults.
 - Prefer kustomize for your own apps and Helm (via `gitops/platform`) for third-party charts.
 - Dev-only conveniences (nip.io ingress hosts, debug flags) live in `overlays/dev` only.
+
+## Current namespaces
+
+| Folder | Purpose |
+|---|---|
+| `platform` | developer tooling: Argo CD (bootstrapped by OpenTofu), Tekton, Tekton Dashboard |
+| `demo` | reference app `podinfo` |
+| `sogeti`, `invent`, `i-and-d` | team namespaces, empty apart from their `namespace` app |
 
 `demo/podinfo` and `demo/namespace` are the reference examples.

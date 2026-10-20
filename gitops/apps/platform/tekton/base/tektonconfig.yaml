@@ -1,0 +1,22 @@
+# Installs Tekton into the platform namespace through the Tekton Operator
+# (operator itself: gitops/platform/tekton-operator, a cluster-level platform app).
+# TektonConfig is cluster-scoped; the operator reconciles components into targetNamespace.
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonConfig
+metadata:
+  name: config
+spec:
+  # lite = Pipelines only. Switch to "basic" to add Triggers (webhook-driven builds)
+  # when the hosted build flow needs it; "all" also adds Chains, Hub, Results, Dashboard.
+  profile: lite
+  targetNamespace: platform
+  pruner:
+    disabled: false
+    resources:
+      - pipelinerun
+      - taskrun
+    keep: 20
+    schedule: "0 3 * * *"
+  pipeline:
+    disable-affinity-assistant: true
+    enable-api-fields: beta

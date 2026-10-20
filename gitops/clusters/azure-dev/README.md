@@ -15,6 +15,6 @@ cluster (environment `dev`). It creates:
 `modules/k8s/argocd-bootstrap`. Render locally with:
 
 ```sh
-helm template root gitops/clusters/azure-dev --namespace argocd \
+helm template root gitops/clusters/azure-dev --namespace platform \
   --set repoURL=https://github.com/<org>/cloud-infra.git
 ```

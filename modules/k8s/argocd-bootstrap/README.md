@@ -23,7 +23,7 @@ provider.
 ## After apply
 
 ```sh
-kubectl -n argocd port-forward svc/argocd-server 8080:443
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+kubectl -n platform port-forward svc/argocd-server 8080:443
+kubectl -n platform get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
 argocd login localhost:8080 --username admin --insecure
 ```

@@ -1,0 +1,20 @@
+# Dev-only, read-only dashboard on a nip.io host. Unauthenticated: anyone with the URL can
+# read pipeline logs. Put oauth2-proxy / Entra ID in front before exposing a writable
+# dashboard or anything beyond dev.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tekton-dashboard
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: tekton.57.174.156.100.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tekton-dashboard
+                port:
+                  number: 9097

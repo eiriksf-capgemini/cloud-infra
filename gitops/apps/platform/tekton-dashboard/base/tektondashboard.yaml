@@ -1,0 +1,10 @@
+# Tekton Dashboard, installed by the operator into the platform namespace.
+# The dashboard has NO authentication of its own. Keep readonly: true wherever it is
+# reachable without an authenticating proxy in front (e.g. oauth2-proxy, Entra ID).
+apiVersion: operator.tekton.dev/v1alpha1
+kind: TektonDashboard
+metadata:
+  name: dashboard
+spec:
+  targetNamespace: platform
+  readonly: true

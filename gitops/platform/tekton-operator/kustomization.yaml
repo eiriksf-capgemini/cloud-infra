@@ -1,0 +1,9 @@
+# Tekton Operator, pinned upstream release YAML.
+# v0.77.0 is the newest version published as release.yaml on storage.googleapis.com;
+# later versions (0.78+) ship only as a Helm chart tarball on GitHub releases without a
+# chart repository. Revisit when a chart repo/OCI location is available.
+# Release notes: https://github.com/tektoncd/operator/releases
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://storage.googleapis.com/tekton-releases/operator/previous/v0.77.0/release.yaml

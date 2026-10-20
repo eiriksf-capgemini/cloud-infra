@@ -12,6 +12,8 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: {{ $.Values.project }}
+  {{- if $app.chart }}
+  # Third-party Helm chart + values from this repo (gitops/platform/<name>/values.yaml)
   sources:
     - repoURL: {{ $app.chartRepoURL }}
       chart: {{ $app.chart }}
@@ -23,6 +25,13 @@ spec:
     - repoURL: {{ $.Values.repoURL }}
       targetRevision: {{ $.Values.targetRevision }}
       ref: values
+  {{- else }}
+  # Kustomize directory in this repo (gitops/platform/<name>/), e.g. upstream release YAML
+  source:
+    repoURL: {{ $.Values.repoURL }}
+    targetRevision: {{ $.Values.targetRevision }}
+    path: gitops/platform/{{ $name }}
+  {{- end }}
   destination:
     server: {{ $.Values.destinationServer }}
     namespace: {{ $app.namespace }}
@@ -35,7 +44,10 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
+      {{- /* createNamespace defaults to true; `default` would swallow an explicit false */}}
+      {{- if or (not (hasKey $app "createNamespace")) $app.createNamespace }}
       - CreateNamespace=true
+      {{- end }}
       {{- if $app.serverSideApply }}
       - ServerSideApply=true
       {{- end }}

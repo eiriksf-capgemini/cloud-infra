@@ -32,4 +32,4 @@ Flux has a cleaner OpenTofu provider but no UI by default; it remains a fine alt
 
 - Day-2 changes to in-cluster workloads are Git commits, not `tofu apply`.
 - The GitOps repo URL must be reachable by Argo CD. For a private repo, add repository
-  credentials (SSH key or GitHub App) as a secret in the `argocd` namespace.
+  credentials (SSH key or GitHub App) as a secret in the Argo CD namespace (`platform`, see ADR 0007).
