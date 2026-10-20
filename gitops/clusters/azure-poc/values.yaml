@@ -28,17 +28,21 @@ apps:
     # cert-manager CRDs carry large annotations; server-side apply avoids the
     # "metadata.annotations: Too long" error.
     serverSideApply: true
-    # cainjector writes the CA bundle into the webhook configs at runtime; ignore it
-    # or the app is permanently OutOfSync.
+    # Two runtime mutations would otherwise keep the app permanently OutOfSync:
+    #  - cainjector writes the CA bundle into the webhook configs;
+    #  - the AKS admissions enforcer injects namespaceSelector expressions that exempt
+    #    kube-system / control-plane namespaces (Azure-specific).
     ignoreDifferences:
       - group: admissionregistration.k8s.io
         kind: ValidatingWebhookConfiguration
         jqPathExpressions:
           - .webhooks[].clientConfig.caBundle
+          - .webhooks[].namespaceSelector.matchExpressions[] | select(.key == "kubernetes.azure.com/managedby" or .key == "control-plane")
       - group: admissionregistration.k8s.io
         kind: MutatingWebhookConfiguration
         jqPathExpressions:
           - .webhooks[].clientConfig.caBundle
+          - .webhooks[].namespaceSelector.matchExpressions[] | select(.key == "kubernetes.azure.com/managedby" or .key == "control-plane")
 
   external-dns:
     # Needs an Azure DNS zone and a workload identity before it can do anything.
