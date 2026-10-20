@@ -70,26 +70,25 @@ az account set --subscription <subscription-id>
 export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
 
 # 1. state backend (local state for this stack only)
-make init  STACK=live/azure/poc/00-tfstate
-make apply STACK=live/azure/poc/00-tfstate
+make init plan apply STACK=live/azure/poc/00-tfstate
 make output STACK=live/azure/poc/00-tfstate      # paste backend_hcl into live/azure/poc/backend.hcl
 
 # 2. network
-make init apply STACK=live/azure/poc/10-network
+make init plan apply STACK=live/azure/poc/10-network
 
 # 3. cluster (~10 min)
-make init apply STACK=live/azure/poc/20-cluster
+make init plan apply STACK=live/azure/poc/20-cluster
 make output STACK=live/azure/poc/20-cluster      # run get_credentials_command
 kubectl get nodes
 
 # 4. container registry (~1 min; needs the cluster for the AcrPull grant, or set grant_aks_pull = false)
-make init apply STACK=live/azure/poc/25-registry
+make init plan apply STACK=live/azure/poc/25-registry
 make output STACK=live/azure/poc/25-registry     # login_server, login_command
 
 # 5. argo cd
 cp live/azure/poc/30-gitops/terraform.tfvars.example live/azure/poc/30-gitops/terraform.tfvars
 #    -> set gitops_repo_url to this repo's clone URL (push the repo first)
-make init apply STACK=live/azure/poc/30-gitops
+make init plan apply STACK=live/azure/poc/30-gitops
 kubectl -n platform port-forward svc/argocd-server 8080:443
 #    admin password: make output STACK=live/azure/poc/30-gitops
 ```

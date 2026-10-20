@@ -1,7 +1,8 @@
 # Thin wrapper around OpenTofu so every stack is driven the same way.
 #
 #   make init  STACK=live/azure/poc/10-network
-#   make plan  STACK=live/azure/poc/20-cluster
+#   make plan  STACK=live/azure/poc/20-cluster     # review, then:
+#   make apply STACK=live/azure/poc/20-cluster     # applies the saved plan, no prompt
 #   make validate-all          # init -backend=false + validate every module and stack
 #
 # STACK is a path relative to the repo root. Stacks under live/<cloud>/<env>/
@@ -25,11 +26,12 @@ init: ## tofu init for STACK (uses ../backend.hcl if present)
 	@mkdir -p $(TF_PLUGIN_CACHE_DIR)
 	cd $(STACK) && $(TOFU) init -input=false $(BACKEND_ARG)
 
-plan: ## tofu plan for STACK
-	cd $(STACK) && $(TOFU) plan -input=false
+plan: ## tofu plan for STACK; saves STACK/tfplan for `make apply`
+	cd $(STACK) && $(TOFU) plan -input=false -out=tfplan
 
-apply: ## tofu apply for STACK (interactive approval)
-	cd $(STACK) && $(TOFU) apply -input=false
+apply: ## apply the plan saved by `make plan` (non-interactive; review the plan first)
+	@test -f $(STACK)/tfplan || { echo "no $(STACK)/tfplan: run 'make plan STACK=$(STACK)' first"; exit 1; }
+	cd $(STACK) && $(TOFU) apply -input=false tfplan && rm -f tfplan
 
 destroy: ## tofu destroy for STACK
 	cd $(STACK) && $(TOFU) destroy -input=false
