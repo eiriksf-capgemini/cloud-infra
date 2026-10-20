@@ -11,13 +11,29 @@
 # configured on the helm provider by the calling stack.
 
 locals {
+  # Explicit resources for every component. The chart sets none, so a namespace
+  # LimitRange default (256Mi in `platform`) would cap the application controller and
+  # OOM-kill it mid-sync. Sized for a small dev cluster; raise with the app count.
+  resources = {
+    controller  = { requests = { cpu = "100m", memory = "256Mi" }, limits = { memory = "1Gi" } }
+    repo_server = { requests = { cpu = "50m", memory = "128Mi" }, limits = { memory = "512Mi" } }
+    server      = { requests = { cpu = "25m", memory = "64Mi" }, limits = { memory = "256Mi" } }
+    appset      = { requests = { cpu = "25m", memory = "64Mi" }, limits = { memory = "256Mi" } }
+    redis       = { requests = { cpu = "25m", memory = "32Mi" }, limits = { memory = "128Mi" } }
+  }
+
   default_values = {
     # Keep the footprint small for a one-node POC.
-    dex           = { enabled = false }
-    notifications = { enabled = false }
-    redis-ha      = { enabled = false }
+    dex            = { enabled = false }
+    notifications  = { enabled = false }
+    redis-ha       = { enabled = false }
+    controller     = { resources = local.resources.controller }
+    repoServer     = { resources = local.resources.repo_server }
+    applicationSet = { resources = local.resources.appset }
+    redis          = { resources = local.resources.redis }
     server = {
-      service = { type = "ClusterIP" }
+      service   = { type = "ClusterIP" }
+      resources = local.resources.server
     }
     configs = {
       params = {
