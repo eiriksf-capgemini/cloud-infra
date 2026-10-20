@@ -28,6 +28,17 @@ apps:
     # cert-manager CRDs carry large annotations; server-side apply avoids the
     # "metadata.annotations: Too long" error.
     serverSideApply: true
+    # cainjector writes the CA bundle into the webhook configs at runtime; ignore it
+    # or the app is permanently OutOfSync.
+    ignoreDifferences:
+      - group: admissionregistration.k8s.io
+        kind: ValidatingWebhookConfiguration
+        jqPathExpressions:
+          - .webhooks[].clientConfig.caBundle
+      - group: admissionregistration.k8s.io
+        kind: MutatingWebhookConfiguration
+        jqPathExpressions:
+          - .webhooks[].clientConfig.caBundle
 
   external-dns:
     # Needs an Azure DNS zone and a workload identity before it can do anything.
