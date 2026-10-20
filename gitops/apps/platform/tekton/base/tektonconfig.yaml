@@ -6,10 +6,17 @@ kind: TektonConfig
 metadata:
   name: config
 spec:
-  # lite = Pipelines only. Switch to "basic" to add Triggers (webhook-driven builds)
-  # when the hosted build flow needs it; "all" also adds Chains, Hub, Results, Dashboard.
-  profile: lite
+  # basic = Pipelines + Triggers. Triggers are needed by the Dashboard's RBAC and later for
+  # webhook-driven builds. "all" would also install the Dashboard and Hub.
+  profile: basic
   targetNamespace: platform
+  # Chains (artifact signing) and Results (run archive with its own Postgres) are installed
+  # unless disabled, whatever the profile. Off for now: ~6 pods / ~600m CPU requests on a
+  # 2-vCPU node. Enable Results when build history matters.
+  chain:
+    disabled: true
+  result:
+    disabled: true
   pruner:
     disabled: false
     resources:
