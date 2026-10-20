@@ -4,7 +4,8 @@ variable "name" {
 }
 
 variable "location" {
-  type = string
+  description = "Region for the Automation account. Independent of the cluster region; Free Trial / Student subscriptions may only use eastus, eastus2, westus, northeurope, southeastasia, japanwest."
+  type        = string
 }
 
 variable "resource_group_name" {

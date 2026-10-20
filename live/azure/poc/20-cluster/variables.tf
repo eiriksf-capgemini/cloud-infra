@@ -23,7 +23,7 @@ variable "kubernetes_version" {
 
 variable "system_node_pool" {
   type = object({
-    vm_size    = optional(string, "Standard_B2als_v2") # cheapest x86 size AKS accepts for a system pool (ADR 0004)
+    vm_size    = optional(string, "Standard_B2ls_v2") # cheapest x86 size AKS accepts for a system pool (ADR 0004)
     node_count = optional(number, 1)
     os_disk_gb = optional(number, 32) # P4 tier; AKS minimum is 30
   })
@@ -48,6 +48,12 @@ variable "auto_stop_time" {
   description = "Daily time (HH:MM, Europe/Oslo) to stop the cluster. null disables auto-stop."
   type        = string
   default     = "19:00"
+}
+
+variable "automation_location" {
+  description = "Region for the auto-stop Automation account. Free Trial subscriptions are limited to eastus, eastus2, westus, northeurope, southeastasia, japanwest."
+  type        = string
+  default     = "northeurope"
 }
 
 variable "auto_start_time" {

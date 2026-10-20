@@ -16,15 +16,20 @@ control plane is free.
 ## Decision
 
 1. **Auto-stop every evening.** `modules/azure/aks-autostop` creates an Azure Automation
-   account with a runbook that stops the cluster daily at 19:00 Europe/Oslo. Start is
+   account with a runbook that stops the cluster daily at 19:00 Europe/Oslo. The account
+   lives in North Europe because Free Trial subscriptions can only create Automation
+   accounts in six regions; it controls the cluster through ARM, so the region is irrelevant. Start is
    manual by default (`make aks-start`), with an optional weekday morning start schedule.
    A stopped cluster bills no node compute; nodes, workloads and Argo CD state survive.
 2. **One small burstable node, Free control plane, nothing optional enabled.** Region is
    **Sweden Central**: the Free Trial marks every common size `NotAvailableForSubscription`
    in Norway East, West Europe and North Europe (only FX/L/isolated families remain), while
-   Sweden Central and UK South expose the full catalogue. Cheapest AKS-eligible x86 size
-   there is `Standard_B2als_v2` (2 vCPU / 4 GB) at about $0.039/h; `Standard_B2pls_v2` (arm64)
-   is $0.034/h and was skipped only to avoid arm64 image surprises. With auto-stop the node
+   Sweden Central and UK South expose the full catalogue. Cheapest AKS-eligible x86 sizes
+   there are `Standard_B2als_v2` (AMD, $0.039/h) and `Standard_B2ls_v2` (Intel, $0.043/h), both
+   2 vCPU / 4 GB. The first apply of `B2als_v2` failed with `AllocationFailed` (no capacity in
+   the region at that moment), so the default is `B2ls_v2`; if that also fails, use
+   `Standard_D2als_v6` or `Standard_D2ls_v5` (~$0.085/h). `Standard_B2pls_v2` (arm64) is
+   $0.034/h and was skipped only to avoid arm64 image surprises. With auto-stop the node
    costs roughly $9/month; the load balancer and public IP add a similar amount. No Log Analytics,
    no Defender, no Azure Policy add-on in the POC cluster. Enable them deliberately later.
 3. **Spot + scale-to-zero for extra capacity.** `user_node_pools` support `spot = true`
@@ -40,7 +45,7 @@ control plane is free.
 - **GitHub Actions cron** for stop/start: works, but needs CI + OIDC federation first.
   Reasonable to switch to later when CI exists.
 - **Stopping Argo CD from scaling things**: not needed; a stopped cluster runs nothing.
-- **Ephemeral OS disks**: need a VM size with a local cache; the default `B2als_v2` has
+- **Ephemeral OS disks**: need a VM size with a local cache; the default `B2ls_v2` has
   none. Revisit if the node size changes to a `*ds*` family.
 
 ## Consequences

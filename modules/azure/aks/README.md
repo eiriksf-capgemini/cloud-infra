@@ -14,7 +14,7 @@ expose the same `cluster_*` / `oidc_issuer_url` outputs and the same `name`,
 | `name` | string | – |
 | `location` | string | – |
 | `kubernetes_version` | string | `null` (region default) |
-| `system_node_pool` | object | 1× `Standard_B2als_v2`, 32 GB disk |
+| `system_node_pool` | object | 1× `Standard_B2ls_v2`, 32 GB disk |
 | `user_node_pools` | map(object) | `{}` |
 | `tags` | map(string) | `{}` |
 
@@ -38,6 +38,6 @@ Azure: `resource_group_name`, `node_resource_group`, `cluster_identity_principal
 
 ## Cost note
 
-A single `Standard_B2als_v2` node (about $0.04/h in Sweden Central) plus a standard load
+A single `Standard_B2ls_v2` node (about $0.04/h in Sweden Central) plus a standard load
 balancer is roughly the floor for a usable AKS cluster. 4 GB RAM is tight; move to
 `Standard_B2as_v2` (8 GB) if system pods get evicted. `tofu destroy` the `20-cluster` stack when not in use.

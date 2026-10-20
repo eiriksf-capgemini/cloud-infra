@@ -45,7 +45,7 @@ module "autostop" {
   source = "../../../../modules/azure/aks-autostop"
 
   name                        = local.cluster_name
-  location                    = var.location
+  location                    = var.automation_location
   resource_group_name         = data.azurerm_resource_group.network.name
   cluster_id                  = module.aks.cluster_id
   cluster_name                = module.aks.cluster_name
