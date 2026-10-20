@@ -6,6 +6,7 @@ later. Provisioning is done with **OpenTofu**; everything inside Kubernetes is r
 
 Decisions and their reasoning live in [`docs/adr/`](docs/adr/). Operational summaries live in
 [`docs/runbooks/`](docs/runbooks/) (currently: [Tekton](docs/runbooks/tekton.md)).
+Dated change reports with what was built, verified and left open live in [`docs/reports/`](docs/reports/) (first: [2026-10-20](docs/reports/2026-10-20-change-report.md)).
 
 ## Layout
 
