@@ -1,0 +1,8 @@
+# All variables have POC defaults; override here if needed (file is gitignored).
+# organization   = "madbadgerbadger"   # -> acrmadbadgerbadger.azurecr.io (must be globally unique)
+# registry_name  = "acrsomethingelse"  # overrides the derived name
+# sku            = "Basic"             # Standard / Premium cost 4x / 10x (ADR 0006)
+# grant_aks_pull = false               # when 20-cluster is destroyed
+#
+# CI identity that may push images:
+# push_principal_ids = { github-actions = "<managed-identity-object-id>" }
