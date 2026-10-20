@@ -9,7 +9,7 @@ variable "name_prefix" {
 }
 
 variable "location" {
-  description = "Azure region, e.g. 'norwayeast' or 'westeurope'."
+  description = "Azure region, e.g. 'swedencentral' or 'westeurope'."
   type        = string
 }
 

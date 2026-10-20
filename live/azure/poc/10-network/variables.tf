@@ -6,7 +6,7 @@ variable "subscription_id" {
 
 variable "location" {
   type    = string
-  default = "norwayeast"
+  default = "swedencentral"
 }
 
 variable "name_prefix" {

@@ -5,9 +5,9 @@ variable "subscription_id" {
 }
 
 variable "location" {
-  description = "Azure region for the state storage."
+  description = "Azure region. swedencentral: nearest EU region where this Free Trial can use cheap B-series sizes."
   type        = string
-  default     = "norwayeast"
+  default     = "swedencentral"
 }
 
 variable "name_prefix" {

@@ -94,6 +94,7 @@ Tear down in reverse: `30-gitops` → `20-cluster` → `10-network`; keep `00-tf
 
 See [`docs/adr/0004-cost-controls.md`](docs/adr/0004-cost-controls.md).
 
+- Region is **Sweden Central**, node size `Standard_B2als_v2`; ADR 0004 explains why.
 - The cluster **auto-stops daily at 19:00 Europe/Oslo** (Azure Automation, free tier).
   Start it with `make aks-start`, check with `make aks-status`, stop early with `make aks-stop`.
   Set `auto_start_time = "08:00"` in `20-cluster` tfvars for weekday auto-start, or

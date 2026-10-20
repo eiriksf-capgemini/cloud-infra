@@ -22,9 +22,9 @@ variable "kubernetes_version" {
 variable "system_node_pool" {
   description = "System node pool sizing. POC default is one small node that also runs workloads."
   type = object({
-    vm_size    = optional(string, "Standard_D2s_v5")
+    vm_size    = optional(string, "Standard_B2als_v2") # cheapest x86 size AKS accepts for a system pool (ADR 0004)
     node_count = optional(number, 1)
-    os_disk_gb = optional(number, 64)
+    os_disk_gb = optional(number, 32) # P4 tier; AKS minimum is 30
   })
   default = {}
 }

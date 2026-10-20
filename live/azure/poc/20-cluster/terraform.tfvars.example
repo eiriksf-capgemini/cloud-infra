@@ -6,8 +6,8 @@
 # auto_stop_time  = "19:00"   # null to disable
 # auto_start_time = "08:00"   # weekdays; null = start manually
 #
-# Spot user pool that scales to zero when idle. Free Trial quota in norwayeast is
+# Spot user pool that scales to zero when idle. Free Trial quota in swedencentral is
 # 4 regular + 3 Spot vCPUs for the whole region, so keep max_count at 1 with a 2-vCPU size.
 # user_node_pools = {
-#   spot = { vm_size = "Standard_D2s_v5", min_count = 0, max_count = 1, spot = true }
+#   spot = { vm_size = "Standard_D2als_v6", min_count = 0, max_count = 1, spot = true }  # B-series cannot be Spot
 # }

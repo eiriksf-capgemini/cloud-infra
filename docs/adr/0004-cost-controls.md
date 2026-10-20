@@ -19,7 +19,13 @@ control plane is free.
    account with a runbook that stops the cluster daily at 19:00 Europe/Oslo. Start is
    manual by default (`make aks-start`), with an optional weekday morning start schedule.
    A stopped cluster bills no node compute; nodes, workloads and Argo CD state survive.
-2. **One small node, Free control plane, nothing optional enabled.** No Log Analytics,
+2. **One small burstable node, Free control plane, nothing optional enabled.** Region is
+   **Sweden Central**: the Free Trial marks every common size `NotAvailableForSubscription`
+   in Norway East, West Europe and North Europe (only FX/L/isolated families remain), while
+   Sweden Central and UK South expose the full catalogue. Cheapest AKS-eligible x86 size
+   there is `Standard_B2als_v2` (2 vCPU / 4 GB) at about $0.039/h; `Standard_B2pls_v2` (arm64)
+   is $0.034/h and was skipped only to avoid arm64 image surprises. With auto-stop the node
+   costs roughly $9/month; the load balancer and public IP add a similar amount. No Log Analytics,
    no Defender, no Azure Policy add-on in the POC cluster. Enable them deliberately later.
 3. **Spot + scale-to-zero for extra capacity.** `user_node_pools` support `spot = true`
    and `min_count = 0`, so burst workloads run on Spot VMs and disappear when idle.
@@ -34,7 +40,7 @@ control plane is free.
 - **GitHub Actions cron** for stop/start: works, but needs CI + OIDC federation first.
   Reasonable to switch to later when CI exists.
 - **Stopping Argo CD from scaling things**: not needed; a stopped cluster runs nothing.
-- **Ephemeral OS disks**: need a VM size with a local cache; the default `D2s_v5` has
+- **Ephemeral OS disks**: need a VM size with a local cache; the default `B2als_v2` has
   none. Revisit if the node size changes to a `*ds*` family.
 
 ## Consequences
@@ -44,7 +50,7 @@ control plane is free.
 - Azure does not guarantee a cluster stopped for >30 days will start again. Destroy
   instead for long gaps.
 - While stopped, the load balancer rules/IP and OS disks still bill a few USD a month.
-- Free Trial quota is small. Measured in `norwayeast` on 2026-10-20: **4 regular vCPUs and
+- Free Trial quota is small. Measured in `norwayeast` and `swedencentral` on 2026-10-20 (identical): **4 regular vCPUs and
   3 Spot vCPUs for the whole region**, 4 per VM family. That means: one 2-vCPU system node,
   room for one surge node during upgrades, and at most one 2-vCPU Spot node. A 4-vCPU size
   would leave no surge capacity. Check with `az vm list-usage -l <region> -o table` before
