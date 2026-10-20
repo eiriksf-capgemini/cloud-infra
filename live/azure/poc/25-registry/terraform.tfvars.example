@@ -1,0 +1,11 @@
+# All variables have POC defaults; override here if needed (file is gitignored).
+# organization   = "madbadgerbadger"   # -> acrmadbadgerbadger.azurecr.io (must be globally unique)
+# registry_name  = "acrsomethingelse"  # overrides the derived name
+# sku            = "Basic"             # Standard / Premium cost 4x / 10x (ADR 0006)
+# grant_aks_pull = false               # while 20-cluster is destroyed (the cluster lookup fails otherwise);
+#                                      # after recreating the cluster, set true and apply: the new kubelet
+#                                      # identity replaces the old AcrPull assignment
+#
+# CI identity that may push images:
+# push_principals = { github-actions = { object_id = "<managed-identity-object-id>" } }
+# A human needs principal_type = "User" (Owners/Contributors can already push without this).

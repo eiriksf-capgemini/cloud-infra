@@ -13,6 +13,7 @@ modules/            reusable building blocks
   azure/network     RG, VNet, AKS subnet, NSG
   azure/aks         AKS cluster implementing the common cluster interface (ADR 0002)
   azure/aks-autostop  Azure Automation schedule that stops the cluster nightly (ADR 0004)
+  azure/acr         Container registry + AcrPull/AcrPush role assignments (ADR 0006)
   aws/, gcp/        placeholders: same interface, not implemented yet
   k8s/argocd-bootstrap  Argo CD + root app-of-apps; cloud-agnostic (helm provider only)
 
@@ -21,6 +22,7 @@ live/<cloud>/<env>/ one directory per stack, each with its own state
   azure/poc/00-tfstate    state storage account + subscription budget alert (local state itself)
   azure/poc/10-network    uses modules/azure/network
   azure/poc/20-cluster    uses modules/azure/aks
+  azure/poc/25-registry   uses modules/azure/acr; grants AcrPull to the cluster's kubelet identity
   azure/poc/30-gitops     uses modules/k8s/argocd-bootstrap
 
 gitops/             what Argo CD reconciles INTO the cluster
@@ -54,7 +56,8 @@ first apply:
 
 ```sh
 for p in Microsoft.Compute Microsoft.Network Microsoft.Storage Microsoft.ManagedIdentity \
-         Microsoft.ContainerService Microsoft.Automation; do az provider register -n $p --wait; done
+         Microsoft.ContainerService Microsoft.ContainerRegistry Microsoft.Automation; do \
+  az provider register -n $p --wait; done
 ```
 
 ## First deployment (when a subscription is available)
@@ -77,7 +80,11 @@ make init apply STACK=live/azure/poc/20-cluster
 make output STACK=live/azure/poc/20-cluster      # run get_credentials_command
 kubectl get nodes
 
-# 4. argo cd
+# 4. container registry (~1 min; needs the cluster for the AcrPull grant, or set grant_aks_pull = false)
+make init apply STACK=live/azure/poc/25-registry
+make output STACK=live/azure/poc/25-registry     # login_server, login_command
+
+# 5. argo cd
 cp live/azure/poc/30-gitops/terraform.tfvars.example live/azure/poc/30-gitops/terraform.tfvars
 #    -> set gitops_repo_url to this repo's clone URL (push the repo first)
 make init apply STACK=live/azure/poc/30-gitops
@@ -90,7 +97,8 @@ installs ingress-nginx and cert-manager and discovers every workload under
 `gitops/apps/*/*/overlays/dev`. From here on, change the cluster by committing to `gitops/`.
 Adding an application is described in `gitops/apps/README.md`.
 
-Tear down in reverse: `30-gitops` → `20-cluster` → `10-network`; keep `00-tfstate`.
+Tear down in reverse: `30-gitops` → `25-registry` → `20-cluster` → `10-network`; keep `00-tfstate`.
+Destroying the registry deletes every image in it.
 
 ## Cost controls (dev environment)
 
@@ -106,6 +114,23 @@ See [`docs/adr/0004-cost-controls.md`](docs/adr/0004-cost-controls.md).
 - Extra capacity should be a **Spot user pool with `min_count = 0`**; see
   `live/azure/poc/20-cluster/terraform.tfvars.example`.
 - Unused for days? `make destroy STACK=live/azure/poc/20-cluster`. Network and state stay.
+- The container registry (`25-registry`, Basic SKU) is a flat ~$5/month and cannot be
+  stopped. Destroy it too if the environment is idle for weeks; images are the only state.
+
+## Container images
+
+`25-registry` creates `acr<organization>.azurecr.io` (default `acrmadbadgerbadger`) and grants
+the AKS kubelet identity `AcrPull`, so pods can reference images from it without an
+`imagePullSecret`. No admin user: authenticate with Entra ID.
+
+```sh
+az acr login --name acrmadbadgerbadger                              # docker/podman client
+docker build -t acrmadbadgerbadger.azurecr.io/myapp:0.1.0 . && docker push acrmadbadgerbadger.azurecr.io/myapp:0.1.0
+az acr import --name acrmadbadgerbadger --source ghcr.io/stefanprodan/podinfo:6.9.2 --image podinfo:6.9.2   # no local docker needed
+az acr repository list --name acrmadbadgerbadger -o table
+```
+
+Pin `image:` in `gitops/apps/<app>/overlays/<env>` to `acrmadbadgerbadger.azurecr.io/<repo>:<tag>`.
 
 ## Day-to-day
 
@@ -122,6 +147,7 @@ Optional: `pre-commit install` to run fmt/validate on commit.
 
 - [x] Repo scaffold, modules, stacks, GitOps chart (validated with `tofu validate`, never applied)
 - [ ] First `tofu apply` on Azure (blocked on a subscription)
+- [x] Container registry (`modules/azure/acr`, `live/azure/poc/25-registry`)
 - [ ] AWS: `modules/aws/{network,eks}`, `live/aws/poc/*`
 - [ ] GCP: `modules/gcp/{network,gke}`, `live/gcp/poc/*`
 - [ ] CI: GitHub Actions with OIDC to Azure running `plan` on PRs
