@@ -7,3 +7,4 @@ labels:
     includeSelectors: false
 resources:
   - ../../base
+  - dashboard-ingress.yaml

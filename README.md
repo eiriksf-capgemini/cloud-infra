@@ -29,7 +29,7 @@ gitops/             what Argo CD reconciles INTO the cluster
   clusters/azure-dev      Helm chart: platform Applications + workload ApplicationSet (environment: dev)
   apps/<namespace>/<app>/ workloads: kustomize base + overlays/{dev,test,prod}; every namespace
                           folder has a `namespace` app (Namespace, LimitRange, quotas); no auto-create
-  apps/platform/          Argo CD (bootstrapped) + Tekton + Tekton Dashboard
+  apps/platform/          Argo CD (bootstrapped) + Tekton (Pipelines, Triggers, read-only Dashboard)
   platform/<service>      Helm values (ingress-nginx, cert-manager, external-dns) or kustomize dir (tekton-operator)
   bootstrap/root-app.yaml manual fallback for the root Application
 ```

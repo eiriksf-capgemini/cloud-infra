@@ -6,10 +6,15 @@ kind: TektonConfig
 metadata:
   name: config
 spec:
-  # basic = Pipelines + Triggers. Triggers are needed by the Dashboard's RBAC and later for
-  # webhook-driven builds. "all" would also install the Dashboard and Hub.
-  profile: basic
+  # all = Pipelines + Triggers + Dashboard on Kubernetes (Chains/Results disabled below).
+  # The Dashboard must come from TektonConfig: the operator removes standalone
+  # TektonDashboard objects when the profile is not "all".
+  profile: all
   targetNamespace: platform
+  dashboard:
+    # The dashboard has NO authentication of its own. Keep it read-only wherever it is
+    # reachable without an authenticating proxy (oauth2-proxy / Entra ID) in front.
+    readonly: true
   # Chains (artifact signing) and Results (run archive with its own Postgres) are installed
   # unless disabled, whatever the profile. Off for now: ~6 pods / ~600m CPU requests on a
   # 2-vCPU node. Enable Results when build history matters.

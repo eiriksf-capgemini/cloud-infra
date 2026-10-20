@@ -54,7 +54,7 @@ Pin images by tag or digest in the overlay so each environment is explicit and r
 
 | Folder | Purpose |
 |---|---|
-| `platform` | developer tooling: Argo CD (bootstrapped by OpenTofu), Tekton, Tekton Dashboard |
+| `platform` | developer tooling: Argo CD (bootstrapped by OpenTofu), Tekton incl. read-only Dashboard (`tekton` app) |
 | `demo` | reference app `podinfo` |
 | `sogeti`, `invent`, `i-and-d` | team namespaces, empty apart from their `namespace` app |
 

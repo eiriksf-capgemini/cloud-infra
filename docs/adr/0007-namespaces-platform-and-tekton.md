@@ -31,8 +31,11 @@ hosted build system on Tekton.
    `tekton-pipelines` namespace; the operator's `TektonConfig.spec.targetNamespace` is the
    supported way to install into `platform`. The operator itself is a cluster-level
    platform app (`gitops/platform/tekton-operator`, pinned release, own `tekton-operator`
-   namespace). `TektonConfig` (profile `lite` = Pipelines, with pruning) and
-   `TektonDashboard` (read-only) are apps under `gitops/apps/platform/`.
+   namespace). `TektonConfig` lives in `gitops/apps/platform/tekton/` with profile `all`
+   (Pipelines + Triggers + read-only Dashboard; Chains and Results explicitly disabled,
+   since the operator installs them under any profile unless told not to). A standalone
+   `TektonDashboard` object does not survive: the operator deletes it when the profile is
+   not `all`, so the Dashboard is configured through `TektonConfig.spec.dashboard`.
 6. **Dashboard is read-only and unauthenticated** on a dev-only nip.io host. Before a
    writable dashboard or any non-dev exposure, put an authenticating proxy (oauth2-proxy
    with Entra ID) in front.
@@ -40,8 +43,8 @@ hosted build system on Tekton.
 ## Consequences
 
 - Argo CD UI/CLI now use namespace `platform` (`kubectl -n platform port-forward svc/argocd-server 8080:443`).
-- Switching Tekton to `basic` (adds Triggers for webhook-driven builds) or `all` is a
-  one-word change in `gitops/apps/platform/tekton/base/tektonconfig.yaml`. Mind the 4 GB node.
+- Enabling Chains or Results is a one-line change in
+  `gitops/apps/platform/tekton/base/tektonconfig.yaml`; Results brings its own Postgres.
 - Next steps for hosted builds: Triggers + a GitHub webhook interceptor, a `Pipeline` per
   repo type under `gitops/apps/platform/tekton-pipelines/`, image pushes to a registry
   (ACR) using workload identity, and Argo CD Image Updater or a Git-write step to promote.
