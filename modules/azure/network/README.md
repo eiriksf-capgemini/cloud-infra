@@ -1,6 +1,6 @@
 # modules/azure/network
 
-Resource group, VNet, AKS node subnet and an (initially empty) NSG.
+Resource group, VNet, AKS node subnet and an NSG that allows public ingress ports (80/443 by default) and nothing else inbound from the Internet.
 
 Naming convention (other stacks look resources up by these names):
 
@@ -19,6 +19,8 @@ Naming convention (other stacks look resources up by these names):
 | `location` | string | – | Azure region |
 | `address_space` | list(string) | `["10.10.0.0/16"]` | VNet CIDRs |
 | `aks_subnet_cidr` | string | `"10.10.0.0/22"` | AKS node subnet |
+| `ingress_allowed_ports` | list(number) | `[80, 443]` | TCP ports allowed in from `ingress_source` |
+| `ingress_source` | string | `"Internet"` | service tag or CIDR |
 | `tags` | map(string) | `{}` | Tags |
 
 ## Outputs

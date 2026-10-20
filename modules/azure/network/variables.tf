@@ -25,6 +25,18 @@ variable "aks_subnet_cidr" {
   default     = "10.10.0.0/22"
 }
 
+variable "ingress_allowed_ports" {
+  description = "TCP ports allowed inbound from `ingress_source` to the AKS subnet (for LoadBalancer services such as ingress-nginx). Empty list = nothing from the Internet."
+  type        = list(number)
+  default     = [80, 443]
+}
+
+variable "ingress_source" {
+  description = "Source for the ingress allow rules: a service tag ('Internet') or a CIDR."
+  type        = string
+  default     = "Internet"
+}
+
 variable "tags" {
   description = "Tags applied to every resource."
   type        = map(string)

@@ -22,13 +22,30 @@ resource "azurerm_subnet" "aks" {
   address_prefixes     = [var.aks_subnet_cidr]
 }
 
-# Empty NSG: AKS manages the rules it needs on the node NICs / LB. Having the NSG
-# in place means we can add explicit allow/deny rules later without re-plumbing.
+# Subnet NSG. AKS only manages the NSG on its own node NICs (in the node resource
+# group); a subnet NSG's default DenyAllInBound still blocks Internet traffic to
+# LoadBalancer services, so public ingress ports must be allowed here explicitly.
 resource "azurerm_network_security_group" "aks" {
   name                = "nsg-${var.name_prefix}-aks"
   location            = azurerm_resource_group.this.location
   resource_group_name = azurerm_resource_group.this.name
   tags                = var.tags
+}
+
+resource "azurerm_network_security_rule" "ingress" {
+  for_each = { for p in var.ingress_allowed_ports : tostring(p) => p }
+
+  name                        = "AllowIngress${each.key}Inbound"
+  priority                    = 1000 + index(var.ingress_allowed_ports, each.value)
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_address_prefix       = var.ingress_source
+  source_port_range           = "*"
+  destination_address_prefix  = var.aks_subnet_cidr
+  destination_port_range      = each.key
+  resource_group_name         = azurerm_resource_group.this.name
+  network_security_group_name = azurerm_network_security_group.aks.name
 }
 
 resource "azurerm_subnet_network_security_group_association" "aks" {
