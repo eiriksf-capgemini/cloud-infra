@@ -42,7 +42,7 @@ resource "azurerm_network_security_rule" "ingress" {
   count = length(var.ingress_allowed_ports) == 0 ? 0 : 1
 
   name                    = "AllowIngressInbound"
-  priority                = 1000
+  priority                = 1100 # not 1000/1001: lets this rule coexist with the per-port rules it replaced during an upgrade apply
   direction               = "Inbound"
   access                  = "Allow"
   protocol                = "Tcp"

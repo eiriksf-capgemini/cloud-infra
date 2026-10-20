@@ -36,6 +36,12 @@ variable "ingress_allowlist_files" {
   default     = ["../allowlist/no-ipv4.txt", "../allowlist/trusted-egress-ipv4.txt"]
 }
 
+variable "ingress_allow_internet" {
+  description = "Explicitly open the ingress ports to the whole Internet, ignoring the allowlists. The allowlists being empty does NOT reopen the ports; this flag is the only way."
+  type        = bool
+  default     = false
+}
+
 variable "ingress_extra_sources" {
   description = "Extra CIDRs allowed in addition to the files, e.g. a home IP as x.x.x.x/32."
   type        = list(string)

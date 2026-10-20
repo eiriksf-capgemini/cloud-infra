@@ -4,5 +4,10 @@
 #
 # Who may reach the ingress load balancer (ADR 0009). Defaults: Norway + Zscaler Oslo.
 # ingress_extra_sources   = ["203.0.113.7/32"]   # e.g. your home IP: curl -s ifconfig.co
-# ingress_allowlist_files = []                   # with extra_sources = [] -> open to the Internet
+# ingress_allow_internet  = true                 # the only way to reopen to the whole Internet
+# ingress_extra_sources   = ["0.0.0.0/0"]        # NOT this; and an empty allowlist fails the plan on purpose
 # ingress_allowed_ports   = []                   # close 80/443 entirely
+#
+# Anything outside Norway that must reach the ingress needs an entry here: Let's Encrypt
+# HTTP-01 validators (use DNS-01 instead), GitHub webhooks for Tekton triggers
+# (https://api.github.com/meta -> "hooks"), uptime checkers.

@@ -15,9 +15,15 @@ if len(sys.argv) != 2 or len(sys.argv[1]) != 2:
     sys.exit(__doc__)
 country = sys.argv[1].upper()
 url = f"https://stat.ripe.net/data/country-resource-list/data.json?resource={country}&v4_format=prefix"
-with urllib.request.urlopen(url, timeout=60) as r:
-    data = json.load(r)["data"]
-raw = [ipaddress.ip_network(p) for p in data["resources"]["ipv4"]]
+try:
+    with urllib.request.urlopen(url, timeout=60) as r:
+        body = json.load(r)
+    data = body["data"]
+    raw = [ipaddress.ip_network(p, strict=True) for p in data["resources"]["ipv4"]]
+except Exception as e:  # network error, non-JSON, unexpected shape, non-CIDR entry
+    sys.exit(f"country-prefixes: failed to fetch or parse RIPEstat data for {country}: {e!r}")
+if body.get("status") != "ok" or len(raw) < 10:
+    sys.exit(f"country-prefixes: implausible result for {country}: status={body.get('status')} prefixes={len(raw)}; nothing written")
 nets = sorted(ipaddress.collapse_addresses(raw), key=lambda n: (int(n.network_address), n.prefixlen))
 print(f"# IPv4 prefixes registered to {country}: {len(raw)} allocations collapsed to {len(nets)} prefixes.")
 print(f"# Generated {datetime.date.today().isoformat()} by scripts/country-prefixes.py from {url}")

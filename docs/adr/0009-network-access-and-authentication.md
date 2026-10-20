@@ -50,7 +50,14 @@ all. The owner wants every service authenticated and no traffic from outside Nor
 
 - From outside Norway, or from a Zscaler datacenter other than Oslo, the ingress, the
   API server and the state backend time out. Recovery commands are in the README.
-- Country lists drift. Refresh monthly; the diff is reviewable.
+- Country lists drift. Refresh monthly; the diff is reviewable. The refresh writes through
+  a temp file and refuses implausible results, and an empty allowlist fails the plan
+  instead of reopening the ports (`ingress_allow_internet` is the only way to reopen).
+- Non-Norwegian callers that must reach the ingress need `ingress_extra_sources`: Let's
+  Encrypt HTTP-01 validators (prefer DNS-01 when a DNS zone exists), GitHub webhooks for
+  Tekton triggers, external uptime checks.
+- The cluster's own outbound IP is kept in the API server allowlist (read from the node
+  resource group's load balancer) so in-cluster controllers never lose the API.
 - One NSG rule with ~1250 prefixes replaces two single-source rules; applying it drops
   the allow rule for a few seconds.
 - `local_account_disabled` remains `false` for the GitOps bootstrap. Flip it once

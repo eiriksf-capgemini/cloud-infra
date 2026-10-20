@@ -7,8 +7,9 @@ locals {
   }, var.tags)
 
   # Who may reach the ingress load balancer (ADR 0009): the prefixes in the allowlist files
-  # (../allowlist/*.txt, '#' comments and blank lines ignored) plus any extra CIDRs. An
-  # empty result means "Internet" so the variable defaults can be cleared to reopen.
+  # (../allowlist/*.txt, '#' comments and blank lines ignored) plus any extra CIDRs. If that
+  # is empty and ingress_allow_internet is false the module's validation fails: an emptied
+  # or truncated allowlist must never silently reopen the ports.
   allowlist_prefixes = flatten([
     for f in var.ingress_allowlist_files : [
       for line in split("\n", file("${path.module}/${f}")) : trimspace(line)
@@ -28,5 +29,5 @@ module "network" {
   tags            = local.tags
 
   ingress_allowed_ports   = var.ingress_allowed_ports
-  ingress_allowed_sources = length(local.ingress_sources) == 0 ? ["Internet"] : local.ingress_sources
+  ingress_allowed_sources = var.ingress_allow_internet ? ["Internet"] : local.ingress_sources
 }

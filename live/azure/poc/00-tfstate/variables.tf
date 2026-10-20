@@ -41,7 +41,12 @@ variable "storage_restricted" {
 }
 
 variable "storage_extra_sources" {
-  description = "Extra public CIDRs (plain IPs or /30 and larger; Azure rejects /31 and /32 notation) allowed to reach the state storage account."
+  description = "Extra public IPs or CIDRs allowed to reach the state storage account. /32 may be given for consistency with 20-cluster; it is stripped because Azure wants bare IPs."
   type        = list(string)
   default     = []
+
+  validation {
+    condition     = alltrue([for s in var.storage_extra_sources : can(cidrhost(strcontains(s, "/") ? s : "${s}/32", 0))])
+    error_message = "storage_extra_sources entries must be IPv4 addresses or CIDRs."
+  }
 }

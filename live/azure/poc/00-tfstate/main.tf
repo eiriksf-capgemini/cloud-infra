@@ -56,7 +56,8 @@ resource "azurerm_storage_account" "tfstate" {
     content {
       default_action = "Deny"
       bypass         = ["AzureServices"]
-      ip_rules       = distinct(concat(local.trusted_egress, var.storage_extra_sources))
+      # Azure rejects /31 and /32 notation here; strip it so the same value as 20-cluster works.
+      ip_rules = distinct([for s in concat(local.trusted_egress, var.storage_extra_sources) : trimsuffix(trimsuffix(s, "/32"), "/31")])
     }
   }
 

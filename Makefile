@@ -75,6 +75,10 @@ aks-status: ## Show the cluster power state
 # --- Access control: regenerate the country allowlist used by the ingress NSG (ADR 0009) ---
 COUNTRY ?= NO
 
+ALLOWLIST_FILE = live/azure/poc/allowlist/$(shell echo $(COUNTRY) | tr A-Z a-z)-ipv4.txt
+
 allowlist-refresh: ## Regenerate live/azure/poc/allowlist/<country>-ipv4.txt from RIPEstat (then commit + apply 10-network)
-	python3 scripts/country-prefixes.py $(COUNTRY) > live/azure/poc/allowlist/$(shell echo $(COUNTRY) | tr A-Z a-z)-ipv4.txt
-	@wc -l live/azure/poc/allowlist/$(shell echo $(COUNTRY) | tr A-Z a-z)-ipv4.txt
+	@set -e; tmp=$$(mktemp); \
+	python3 scripts/country-prefixes.py $(COUNTRY) > $$tmp; \
+	mv $$tmp $(ALLOWLIST_FILE); \
+	echo "$$(grep -c -v '^#' $(ALLOWLIST_FILE)) prefixes -> $(ALLOWLIST_FILE)"

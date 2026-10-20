@@ -3,6 +3,6 @@
 # location        = "swedencentral"
 # name_prefix     = "cloudinfra-poc"
 #
-# Storage firewall (ADR 0009): trusted egress (Zscaler Oslo) + extras. Plain IPs, no /32.
-# storage_extra_sources = ["203.0.113.7"]
+# Storage firewall (ADR 0009): trusted egress (Zscaler Oslo) + extras (/32 is fine, it is stripped).
+# storage_extra_sources = ["203.0.113.7/32"]
 # storage_restricted    = false

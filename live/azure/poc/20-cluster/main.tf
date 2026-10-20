@@ -14,7 +14,19 @@ locals {
     for line in split("\n", file("${path.module}/../allowlist/trusted-egress-ipv4.txt")) : trimspace(line)
     if trimspace(line) != "" && !startswith(trimspace(line), "#")
   ]
-  api_server_sources = var.api_server_restricted ? distinct(concat(local.trusted_egress, var.api_server_extra_sources)) : []
+  # AKS wants CIDR notation; accept bare IPs too and normalise, so the same value works
+  # here and in 00-tfstate (which wants bare IPs).
+  api_server_sources = var.api_server_restricted ? distinct(concat(
+    [for s in concat(local.trusted_egress, var.api_server_extra_sources) : strcontains(s, "/") ? s : "${s}/32"],
+    [for ip in local.cluster_egress_ips : "${ip}/32"],
+  )) : []
+
+  # Pods reach the API server through the cluster's own outbound IP(s), which must stay
+  # authorised or Argo CD and every controller lose the API. AKS adds them itself at
+  # creation; on later applies we add them explicitly from the node resource group.
+  cluster_egress_ips = var.api_server_restricted && var.api_server_include_cluster_egress ? [
+    for pip in data.azurerm_public_ip.cluster_egress : pip.ip_address
+  ] : []
 
   autostop_enabled = length(var.auto_stop_times) > 0
 }
@@ -29,6 +41,24 @@ data "azurerm_subnet" "aks" {
   name                 = "snet-aks"
   virtual_network_name = "vnet-${var.name_prefix}"
   resource_group_name  = data.azurerm_resource_group.network.name
+}
+
+# The cluster's standard load balancer lives in the node resource group AKS manages; its
+# frontends include the outbound (egress) IP. Only readable once the cluster exists.
+data "azurerm_lb" "kubernetes" {
+  count = var.api_server_restricted && var.api_server_include_cluster_egress ? 1 : 0
+
+  name                = "kubernetes"
+  resource_group_name = "${data.azurerm_resource_group.network.name}-${local.cluster_name}-nodes"
+}
+
+data "azurerm_public_ip" "cluster_egress" {
+  for_each = var.api_server_restricted && var.api_server_include_cluster_egress ? toset([
+    for f in data.azurerm_lb.kubernetes[0].frontend_ip_configuration : f.public_ip_address_id if f.public_ip_address_id != null && f.public_ip_address_id != ""
+  ]) : toset([])
+
+  name                = element(split("/", each.value), 8)
+  resource_group_name = element(split("/", each.value), 4)
 }
 
 module "aks" {

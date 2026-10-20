@@ -79,6 +79,12 @@ variable "api_server_restricted" {
   default     = true
 }
 
+variable "api_server_include_cluster_egress" {
+  description = "Also authorise the cluster's own outbound IP(s), read from its load balancer, so in-cluster controllers keep reaching the API server. Set false for the very first apply (the load balancer does not exist yet; AKS adds the IP itself at creation)."
+  type        = bool
+  default     = true
+}
+
 variable "api_server_extra_sources" {
   description = "Extra CIDRs allowed to reach the API server, e.g. a home IP as x.x.x.x/32. Max 200 in total."
   type        = list(string)

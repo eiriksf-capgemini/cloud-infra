@@ -117,7 +117,12 @@ variable "api_server_authorized_ip_ranges" {
   default     = []
 
   validation {
-    condition     = length(var.api_server_authorized_ip_ranges) <= 200 && alltrue([for s in var.api_server_authorized_ip_ranges : can(cidrhost(s, 0))])
-    error_message = "api_server_authorized_ip_ranges must be at most 200 CIDRs."
+    condition     = length(var.api_server_authorized_ip_ranges) <= 200
+    error_message = "api_server_authorized_ip_ranges: AKS accepts at most 200 ranges."
+  }
+
+  validation {
+    condition     = alltrue([for s in var.api_server_authorized_ip_ranges : can(cidrhost(s, 0))])
+    error_message = "api_server_authorized_ip_ranges entries must be CIDRs (a single host is x.x.x.x/32)."
   }
 }
