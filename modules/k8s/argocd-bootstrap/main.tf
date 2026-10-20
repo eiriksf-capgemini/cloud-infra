@@ -73,6 +73,11 @@ resource "helm_release" "argocd" {
   wait    = true
   timeout = 600
 
+  # The root Application (an argoproj.io CR) ships in the same release as the CRD that
+  # defines it. Helm's pre-install OpenAPI validation rejects unknown kinds, so skip it;
+  # Helm still installs CRDs first and unknown kinds last in its kind ordering.
+  disable_openapi_validation = true
+
   values = [
     yamlencode(local.default_values),
     yamlencode(var.values),

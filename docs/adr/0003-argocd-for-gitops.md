@@ -15,7 +15,9 @@ from Git, not applied by hand or by OpenTofu. Candidates: Argo CD and Flux.
 - The **root Application** (app-of-apps) is created in the same Helm release through the
   chart's `extraObjects` value. This avoids the classic failure where `kubernetes_manifest`
   cannot plan because the Application CRD does not exist yet, and means no `kubernetes`
-  provider is needed.
+  provider is needed. Helm's own pre-install OpenAPI validation has the same objection, so
+  the release sets `disable_openapi_validation = true`; Helm's kind ordering then installs
+  the CRDs before the Application.
 - `gitops/clusters/<cluster>/` is a tiny Helm chart that renders one Argo CD `Application`
   per platform service. The Git repo URL and revision are chart values, passed as Helm
   parameters from the root Application, so the URL is never hardcoded in manifests.
