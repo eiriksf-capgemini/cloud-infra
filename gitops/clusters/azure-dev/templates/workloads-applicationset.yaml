@@ -1,0 +1,51 @@
+{{- if .Values.workloads.enabled }}
+---
+# One Application per workload, discovered from Git. Adding an app = adding a directory
+# <workloads.path>/<app>/overlays/{{ .Values.environment }}; no change needed here.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: workloads-{{ .Values.environment }}
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: {{ .Values.workloads.syncWave | default "30" | quote }}
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: {{ .Values.repoURL }}
+        revision: {{ .Values.targetRevision }}
+        directories:
+          - path: {{ .Values.workloads.path }}/*/overlays/{{ .Values.environment }}
+  template:
+    metadata:
+      # path = gitops/apps/<app>/overlays/<env>  ->  segments[2] is the app name
+      name: '{{ `{{ index .path.segments 2 }}` }}'
+      labels:
+        app.kubernetes.io/name: '{{ `{{ index .path.segments 2 }}` }}'
+        environment: {{ .Values.environment }}
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: {{ .Values.project }}
+      source:
+        repoURL: {{ .Values.repoURL }}
+        targetRevision: {{ .Values.targetRevision }}
+        path: '{{ `{{ .path.path }}` }}'
+      destination:
+        server: {{ .Values.destinationServer }}
+        namespace: '{{ `{{ index .path.segments 2 }}` }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 10s
+            factor: 2
+            maxDuration: 3m
+{{- end }}

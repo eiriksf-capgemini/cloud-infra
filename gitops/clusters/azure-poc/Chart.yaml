@@ -1,5 +1,0 @@
-apiVersion: v2
-name: azure-poc
-description: App-of-apps for the azure-poc cluster. Renders one Argo CD Application per platform service.
-type: application
-version: 0.1.0

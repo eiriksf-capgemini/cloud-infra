@@ -6,6 +6,16 @@ targetRevision: main
 destinationServer: https://kubernetes.default.svc
 project: default
 
+# Which environment this cluster serves. Selects gitops/apps/*/overlays/<environment>.
+environment: dev
+
+# Workload app-of-apps: an ApplicationSet discovers every directory matching
+# <workloads.path>/*/overlays/<environment> and creates one Application per app.
+workloads:
+  enabled: true
+  path: gitops/apps
+  syncWave: "30"
+
 # Platform services. Each becomes a multi-source Application:
 #   source 1: the upstream Helm chart
 #   source 2: this repo, providing gitops/platform/<name>/values.yaml

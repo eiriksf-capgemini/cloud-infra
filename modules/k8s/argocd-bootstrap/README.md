@@ -10,7 +10,7 @@ provider.
 |---|---|---|---|
 | `gitops_repo_url` | string | – | Git URL Argo CD reconciles from |
 | `gitops_revision` | string | `main` | Branch/tag/commit |
-| `gitops_path` | string | `gitops/clusters/azure-poc` | Path to the cluster chart |
+| `gitops_path` | string | `gitops/clusters/azure-dev` | Path to the cluster chart |
 | `namespace` | string | `argocd` | |
 | `chart_version` | string | `10.10.5` | argo-cd chart version |
 | `create_root_app` | bool | `true` | Create the root Application |

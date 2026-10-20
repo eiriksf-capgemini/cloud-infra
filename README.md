@@ -24,7 +24,8 @@ live/<cloud>/<env>/ one directory per stack, each with its own state
   azure/poc/30-gitops     uses modules/k8s/argocd-bootstrap
 
 gitops/             what Argo CD reconciles INTO the cluster
-  clusters/azure-poc      Helm chart: one Application per platform service
+  clusters/azure-dev      Helm chart: platform Applications + workload ApplicationSet (environment: dev)
+  apps/<app>/             workloads: kustomize base + overlays/{dev,test,prod}
   platform/<service>      values.yaml per service (ingress-nginx, cert-manager, external-dns)
   bootstrap/root-app.yaml manual fallback for the root Application
 ```
@@ -84,9 +85,10 @@ kubectl -n argocd port-forward svc/argocd-server 8080:443
 #    admin password: make output STACK=live/azure/poc/30-gitops
 ```
 
-Open https://localhost:8080. The `root` Application syncs `gitops/clusters/azure-poc`, which
-installs ingress-nginx and cert-manager. From here on, change the cluster by committing to
-`gitops/`.
+Open https://localhost:8080. The `root` Application syncs `gitops/clusters/azure-dev`, which
+installs ingress-nginx and cert-manager and discovers every workload under
+`gitops/apps/*/overlays/dev`. From here on, change the cluster by committing to `gitops/`.
+Adding an application is described in `gitops/apps/README.md`.
 
 Tear down in reverse: `30-gitops` → `20-cluster` → `10-network`; keep `00-tfstate`.
 
@@ -111,7 +113,7 @@ See [`docs/adr/0004-cost-controls.md`](docs/adr/0004-cost-controls.md).
 make validate-all     # init -backend=false + validate every module and stack; no credentials needed
 make fmt              # tofu fmt -recursive
 make plan  STACK=live/azure/poc/20-cluster
-helm template root gitops/clusters/azure-poc --namespace argocd   # render the app-of-apps
+helm template root gitops/clusters/azure-dev --namespace argocd   # render the app-of-apps
 ```
 
 Optional: `pre-commit install` to run fmt/validate on commit.

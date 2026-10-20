@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: podinfo
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: podinfo
+          env:
+            - name: PODINFO_UI_MESSAGE
+              value: "podinfo on prod"
+            - name: PODINFO_UI_COLOR
+              value: "#c62828"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi

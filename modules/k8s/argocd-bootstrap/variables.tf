@@ -24,7 +24,7 @@ variable "gitops_revision" {
 variable "gitops_path" {
   description = "Path inside the repo to the cluster's app-of-apps Helm chart."
   type        = string
-  default     = "gitops/clusters/azure-poc"
+  default     = "gitops/clusters/azure-dev"
 }
 
 variable "create_root_app" {

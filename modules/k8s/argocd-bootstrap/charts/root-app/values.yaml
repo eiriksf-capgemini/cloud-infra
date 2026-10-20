@@ -3,5 +3,5 @@ name: root
 project: default
 repoURL: ""
 targetRevision: main
-path: gitops/clusters/azure-poc
+path: gitops/clusters/azure-dev
 destinationServer: https://kubernetes.default.svc

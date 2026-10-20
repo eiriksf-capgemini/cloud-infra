@@ -15,7 +15,7 @@ spec:
   source:
     repoURL: https://github.com/CHANGEME/cloud-infra.git
     targetRevision: main
-    path: gitops/clusters/azure-poc
+    path: gitops/clusters/azure-dev
     helm:
       parameters:
         - name: repoURL

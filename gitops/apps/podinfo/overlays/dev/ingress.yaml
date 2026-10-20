@@ -1,0 +1,19 @@
+# Dev-only ingress using a nip.io hostname on the ingress-nginx public IP, so the app is
+# reachable without owning a DNS zone. Replace with a real host + cert-manager TLS later.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: podinfo
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: podinfo.57.174.156.100.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: podinfo
+                port:
+                  name: http
