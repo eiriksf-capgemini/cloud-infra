@@ -24,9 +24,9 @@ output "get_credentials_command" {
 }
 
 output "auto_stop" {
-  value = var.auto_stop_time == null ? "disabled" : module.autostop[0].stop_schedule
+  value = length(var.auto_stop_times) == 0 ? "disabled" : module.autostop[0].stop_schedule
 }
 
 output "auto_start" {
-  value = var.auto_stop_time == null ? "disabled" : module.autostop[0].start_schedule
+  value = length(var.auto_stop_times) == 0 ? "disabled" : module.autostop[0].start_schedule
 }

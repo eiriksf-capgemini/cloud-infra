@@ -10,10 +10,18 @@
 # `tofu destroy` the cluster stack for long breaks.
 
 locals {
-  # Schedules must start in the future; anchor to tomorrow at the requested time, expressed
-  # with the zone's UTC offset so Azure derives the right wall-clock time in `timezone`.
-  # start_time is then ignored on later plans so the schedule is not recreated daily.
+  # Schedules must start at least 5 minutes in the future. Anchor each one to today at the
+  # requested wall-clock time if that is still ahead, otherwise to tomorrow, expressed with
+  # the zone's UTC offset so Azure derives the right local time in `timezone`. start_time
+  # is ignored on later plans so schedules are not recreated daily.
+  today    = formatdate("YYYY-MM-DD", timestamp())
   tomorrow = formatdate("YYYY-MM-DD", timeadd(timestamp(), "24h"))
+  earliest = timeadd(timestamp(), "10m")
+
+  first_run = { for t in concat(var.stop_times, var.start_time == null ? [] : [var.start_time]) :
+    t => timecmp("${local.today}T${t}:00${var.timezone_utc_offset}", local.earliest) > 0 ?
+    "${local.today}T${t}:00${var.timezone_utc_offset}" : "${local.tomorrow}T${t}:00${var.timezone_utc_offset}"
+  }
 }
 
 resource "azurerm_automation_account" "this" {
@@ -54,15 +62,19 @@ resource "azurerm_automation_runbook" "power" {
   }
 }
 
+# One daily schedule per entry in stop_times (e.g. end of the working day plus a late
+# safety net). Stopping an already stopped cluster is a no-op in the runbook.
 resource "azurerm_automation_schedule" "stop" {
-  name                    = "stop-daily-${replace(var.stop_time, ":", "")}"
+  for_each = toset(var.stop_times)
+
+  name                    = "stop-daily-${replace(each.value, ":", "")}"
   resource_group_name     = var.resource_group_name
   automation_account_name = azurerm_automation_account.this.name
   frequency               = "Day"
   interval                = 1
   timezone                = var.timezone
-  start_time              = "${local.tomorrow}T${var.stop_time}:00${var.timezone_utc_offset}"
-  description             = "Stop the cluster every day at ${var.stop_time} ${var.timezone}."
+  start_time              = local.first_run[each.value]
+  description             = "Stop the cluster every day at ${each.value} ${var.timezone}."
 
   lifecycle {
     ignore_changes = [start_time]
@@ -70,9 +82,11 @@ resource "azurerm_automation_schedule" "stop" {
 }
 
 resource "azurerm_automation_job_schedule" "stop" {
+  for_each = azurerm_automation_schedule.stop
+
   resource_group_name     = var.resource_group_name
   automation_account_name = azurerm_automation_account.this.name
-  schedule_name           = azurerm_automation_schedule.stop.name
+  schedule_name           = each.value.name
   runbook_name            = azurerm_automation_runbook.power.name
 
   parameters = {
@@ -91,7 +105,7 @@ resource "azurerm_automation_schedule" "start" {
   interval                = 1
   week_days               = var.start_week_days
   timezone                = var.timezone
-  start_time              = "${local.tomorrow}T${var.start_time}:00${var.timezone_utc_offset}"
+  start_time              = local.first_run[var.start_time]
   description             = "Start the cluster on ${join(", ", var.start_week_days)} at ${var.start_time} ${var.timezone}."
 
   lifecycle {

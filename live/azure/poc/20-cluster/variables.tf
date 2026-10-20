@@ -44,10 +44,10 @@ variable "user_node_pools" {
   default = {}
 }
 
-variable "auto_stop_time" {
-  description = "Daily time (HH:MM, Europe/Oslo) to stop the cluster. null disables auto-stop."
-  type        = string
-  default     = "19:00"
+variable "auto_stop_times" {
+  description = "Daily times (HH:MM, Europe/Oslo) to stop the cluster: end of the working day plus a late safety net for evenings it was started again. Empty list disables auto-stop."
+  type        = list(string)
+  default     = ["17:00", "22:00"]
 }
 
 variable "automation_location" {

@@ -42,14 +42,19 @@ variable "timezone_utc_offset" {
   }
 }
 
-variable "stop_time" {
-  description = "Daily stop time, HH:MM in `timezone`."
-  type        = string
-  default     = "19:00"
+variable "stop_times" {
+  description = "Daily stop times, HH:MM in `timezone`. Several entries give several schedules, e.g. [\"17:00\", \"22:00\"] for end of day plus a late-work safety net. Must not be empty."
+  type        = list(string)
+  default     = ["19:00"]
 
   validation {
-    condition     = can(regex("^([01][0-9]|2[0-3]):[0-5][0-9]$", var.stop_time))
-    error_message = "stop_time must be HH:MM (24h)."
+    condition     = length(var.stop_times) > 0 && alltrue([for t in var.stop_times : can(regex("^([01][0-9]|2[0-3]):[0-5][0-9]$", t))])
+    error_message = "stop_times must be a non-empty list of HH:MM (24h) strings."
+  }
+
+  validation {
+    condition     = length(distinct(var.stop_times)) == length(var.stop_times)
+    error_message = "stop_times must not contain duplicates."
   }
 }
 

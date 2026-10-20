@@ -38,10 +38,11 @@ module "aks" {
   admin_group_object_ids = var.admin_group_object_ids
 }
 
-# Cost control: stop the cluster every evening (ADR 0004). Start it again with
+# Cost control: stop the cluster at the end of the working day, and again late in the
+# evening in case it was started for late work (ADR 0004). Start it again with
 # `make aks-start`, or set auto_start_time for weekday mornings.
 module "autostop" {
-  count  = var.auto_stop_time == null ? 0 : 1
+  count  = length(var.auto_stop_times) == 0 ? 0 : 1
   source = "../../../../modules/azure/aks-autostop"
 
   name                        = local.cluster_name
@@ -50,7 +51,7 @@ module "autostop" {
   cluster_id                  = module.aks.cluster_id
   cluster_name                = module.aks.cluster_name
   cluster_resource_group_name = module.aks.resource_group_name
-  stop_time                   = var.auto_stop_time
+  stop_times                  = var.auto_stop_times
   start_time                  = var.auto_start_time
   timezone                    = "Europe/Oslo"
   timezone_utc_offset         = var.timezone_utc_offset

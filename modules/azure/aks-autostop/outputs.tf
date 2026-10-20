@@ -3,7 +3,7 @@ output "automation_account_name" {
 }
 
 output "stop_schedule" {
-  value = "daily at ${var.stop_time} ${var.timezone}"
+  value = "daily at ${join(" and ", var.stop_times)} ${var.timezone}"
 }
 
 output "start_schedule" {
