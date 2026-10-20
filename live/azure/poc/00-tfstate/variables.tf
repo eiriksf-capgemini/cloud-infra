@@ -33,3 +33,15 @@ variable "budget_contact_emails" {
   type        = list(string)
   default     = []
 }
+
+variable "storage_restricted" {
+  description = "Limit the state storage account to ../allowlist/trusted-egress-ipv4.txt plus storage_extra_sources (ADR 0009). false = reachable from anywhere, Entra ID still required."
+  type        = bool
+  default     = true
+}
+
+variable "storage_extra_sources" {
+  description = "Extra public CIDRs (plain IPs or /30 and larger; Azure rejects /31 and /32 notation) allowed to reach the state storage account."
+  type        = list(string)
+  default     = []
+}

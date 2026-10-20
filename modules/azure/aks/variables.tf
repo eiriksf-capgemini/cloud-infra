@@ -110,3 +110,14 @@ variable "dns_service_ip" {
   type        = string
   default     = "10.0.0.10"
 }
+
+variable "api_server_authorized_ip_ranges" {
+  description = "CIDRs allowed to reach the API server endpoint (kubectl, Argo CD CLI, CI). [] = reachable from anywhere (Entra ID still required). Max 200. Recovery if locked out: az aks update --api-server-authorized-ip-ranges."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = length(var.api_server_authorized_ip_ranges) <= 200 && alltrue([for s in var.api_server_authorized_ip_ranges : can(cidrhost(s, 0))])
+    error_message = "api_server_authorized_ip_ranges must be at most 200 CIDRs."
+  }
+}

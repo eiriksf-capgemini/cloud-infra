@@ -15,6 +15,13 @@ locals {
 
 data "azurerm_client_config" "current" {}
 
+locals {
+  trusted_egress = [
+    for line in split("\n", file("${path.module}/../allowlist/trusted-egress-ipv4.txt")) : trimspace(line)
+    if trimspace(line) != "" && !startswith(trimspace(line), "#")
+  ]
+}
+
 resource "random_id" "suffix" {
   byte_length = 2
 }
@@ -40,6 +47,18 @@ resource "azurerm_storage_account" "tfstate" {
   allow_nested_items_to_be_public = false
   shared_access_key_enabled       = false
   default_to_oauth_authentication = true
+
+  # Source-IP firewall (ADR 0009): only the operators' egress ranges may reach the state
+  # blobs; Azure services bypass. ARM operations on the account itself are not affected, so
+  # a lockout is fixed with `az storage account network-rule add`.
+  dynamic "network_rules" {
+    for_each = var.storage_restricted ? [1] : []
+    content {
+      default_action = "Deny"
+      bypass         = ["AzureServices"]
+      ip_rules       = distinct(concat(local.trusted_egress, var.storage_extra_sources))
+    }
+  }
 
   blob_properties {
     versioning_enabled = true

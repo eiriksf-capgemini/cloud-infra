@@ -17,7 +17,7 @@ export TF_PLUGIN_CACHE_DIR ?= $(HOME)/.terraform.d/plugin-cache
 BACKEND_HCL := $(wildcard $(STACK)/../backend.hcl)
 BACKEND_ARG := $(if $(BACKEND_HCL),-backend-config=../backend.hcl,)
 
-.PHONY: help init plan apply destroy output fmt fmt-check validate validate-all clean aks-stop aks-start aks-status
+.PHONY: help init plan apply destroy output fmt fmt-check validate validate-all clean aks-stop aks-start aks-status allowlist-refresh
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -71,3 +71,10 @@ aks-start: ## Start the AKS cluster (takes a few minutes)
 
 aks-status: ## Show the cluster power state
 	az aks show --resource-group $(AKS_RG) --name $(AKS_NAME) --query '{name:name, power:powerState.code, nodes:agentPoolProfiles[].{pool:name,size:vmSize,count:count}}' -o json
+
+# --- Access control: regenerate the country allowlist used by the ingress NSG (ADR 0009) ---
+COUNTRY ?= NO
+
+allowlist-refresh: ## Regenerate live/azure/poc/allowlist/<country>-ipv4.txt from RIPEstat (then commit + apply 10-network)
+	python3 scripts/country-prefixes.py $(COUNTRY) > live/azure/poc/allowlist/$(shell echo $(COUNTRY) | tr A-Z a-z)-ipv4.txt
+	@wc -l live/azure/poc/allowlist/$(shell echo $(COUNTRY) | tr A-Z a-z)-ipv4.txt

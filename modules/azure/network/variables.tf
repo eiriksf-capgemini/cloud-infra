@@ -26,15 +26,25 @@ variable "aks_subnet_cidr" {
 }
 
 variable "ingress_allowed_ports" {
-  description = "TCP ports allowed inbound from `ingress_source` to the AKS subnet (for LoadBalancer services such as ingress-nginx). Empty list = nothing from the Internet."
+  description = "TCP ports allowed inbound from `ingress_allowed_sources` to the AKS subnet (for LoadBalancer services such as ingress-nginx). Empty list = nothing from the Internet."
   type        = list(number)
   default     = [80, 443]
 }
 
-variable "ingress_source" {
-  description = "Source for the ingress allow rules: a service tag ('Internet') or a CIDR."
-  type        = string
-  default     = "Internet"
+variable "ingress_allowed_sources" {
+  description = "Sources allowed to reach the ingress ports: either exactly one service tag (e.g. [\"Internet\"]) or a list of CIDRs (up to 4000, e.g. a country's registered prefixes). Everything else is denied by the NSG default rule."
+  type        = list(string)
+  default     = ["Internet"]
+
+  validation {
+    condition     = length(var.ingress_allowed_sources) > 0
+    error_message = "ingress_allowed_sources must not be empty; set ingress_allowed_ports = [] to close the ports instead."
+  }
+
+  validation {
+    condition     = length(var.ingress_allowed_sources) == 1 || alltrue([for s in var.ingress_allowed_sources : can(cidrhost(s, 0))])
+    error_message = "With more than one entry every source must be a CIDR; service tags cannot be mixed into a list."
+  }
 }
 
 variable "tags" {

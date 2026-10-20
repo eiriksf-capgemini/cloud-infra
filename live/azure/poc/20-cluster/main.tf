@@ -8,6 +8,14 @@ locals {
 
   cluster_name = "aks-${var.name_prefix}"
 
+  # Operators' egress ranges (ADR 0009); the API server accepts at most 200, so the full
+  # Norway list used by the ingress NSG does not fit here.
+  trusted_egress = [
+    for line in split("\n", file("${path.module}/../allowlist/trusted-egress-ipv4.txt")) : trimspace(line)
+    if trimspace(line) != "" && !startswith(trimspace(line), "#")
+  ]
+  api_server_sources = var.api_server_restricted ? distinct(concat(local.trusted_egress, var.api_server_extra_sources)) : []
+
   autostop_enabled = length(var.auto_stop_times) > 0
 }
 
@@ -38,6 +46,8 @@ module "aks" {
   resource_group_name    = data.azurerm_resource_group.network.name
   subnet_id              = data.azurerm_subnet.aks.id
   admin_group_object_ids = var.admin_group_object_ids
+
+  api_server_authorized_ip_ranges = local.api_server_sources
 }
 
 # Cost control: stop the cluster at the end of the working day, and again late in the

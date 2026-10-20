@@ -32,20 +32,28 @@ resource "azurerm_network_security_group" "aks" {
   tags                = var.tags
 }
 
-resource "azurerm_network_security_rule" "ingress" {
-  for_each = { for p in var.ingress_allowed_ports : tostring(p) => p }
+locals {
+  # A single service tag ("Internet") must go in source_address_prefix; a list of CIDRs in
+  # source_address_prefixes. Azure allows up to 4000 prefixes per rule.
+  ingress_single_source = length(var.ingress_allowed_sources) == 1 ? var.ingress_allowed_sources[0] : null
+}
 
-  name                  = "AllowIngress${each.key}Inbound"
-  priority              = 1000 + index(var.ingress_allowed_ports, each.value)
-  direction             = "Inbound"
-  access                = "Allow"
-  protocol              = "Tcp"
-  source_address_prefix = var.ingress_source
-  source_port_range     = "*"
+resource "azurerm_network_security_rule" "ingress" {
+  count = length(var.ingress_allowed_ports) == 0 ? 0 : 1
+
+  name                    = "AllowIngressInbound"
+  priority                = 1000
+  direction               = "Inbound"
+  access                  = "Allow"
+  protocol                = "Tcp"
+  source_address_prefix   = local.ingress_single_source
+  source_address_prefixes = local.ingress_single_source == null ? var.ingress_allowed_sources : null
+  source_port_range       = "*"
   # "*" not the subnet CIDR: AKS load balancer rules use floating IP (DSR), so packets
   # arrive at the node NIC with the LB's public IP as destination.
   destination_address_prefix  = "*"
-  destination_port_range      = each.key
+  destination_port_ranges     = [for p in var.ingress_allowed_ports : tostring(p)]
+  description                 = "Ingress ports from ${length(var.ingress_allowed_sources)} allowed source(s); everything else stays on DenyAllInBound (ADR 0009)."
   resource_group_name         = azurerm_resource_group.this.name
   network_security_group_name = azurerm_network_security_group.aks.name
 }

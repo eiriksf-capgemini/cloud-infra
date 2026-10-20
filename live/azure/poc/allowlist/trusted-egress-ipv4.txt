@@ -1,0 +1,16 @@
+# Egress ranges of the people who operate this environment, used where a full country list
+# does not fit (AKS API server and storage firewalls allow at most 200 ranges) and to
+# complement the registered-country list (these ranges are registered to CH, not NO).
+#
+# Zscaler "Oslo III" datacenter, IPv4 (config.zscaler.com, cenr, 2026-10-20). Capgemini
+# laptops egress through Zscaler; if Zscaler fails over to another datacenter (Stockholm,
+# Copenhagen) you are locked out until you add that range here or use the recovery
+# commands in the README.
+136.226.200.0/23
+136.226.202.0/23
+136.226.204.0/23
+136.226.206.0/23
+136.226.208.0/23
+136.226.210.0/23
+136.226.212.0/23
+147.161.146.0/23
