@@ -44,10 +44,15 @@ variable "user_node_pools" {
   default = {}
 }
 
-variable "auto_stop_time" {
-  description = "Daily time (HH:MM, Europe/Oslo) to stop the cluster. null disables auto-stop."
-  type        = string
-  default     = "19:00"
+variable "auto_stop_times" {
+  description = "Daily times (HH:MM, Europe/Oslo) to stop the cluster: end of the working day plus a late safety net for evenings it was started again. Empty list disables auto-stop. (Replaces the former auto_stop_time string; an old tfvars still setting that only produces a warning.)"
+  type        = list(string)
+  default     = ["17:00", "22:00"]
+
+  validation {
+    condition     = alltrue([for t in var.auto_stop_times : can(regex("^([01][0-9]|2[0-3]):[0-5][0-9]$", t))]) && length(distinct(var.auto_stop_times)) == length(var.auto_stop_times)
+    error_message = "auto_stop_times must be distinct HH:MM (24h) strings."
+  }
 }
 
 variable "automation_location" {

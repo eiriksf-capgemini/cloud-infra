@@ -3,7 +3,7 @@
 # admin_group_object_ids = ["<entra-group-object-id>"]
 #
 # Cost controls (ADR 0004)
-# auto_stop_time  = "19:00"   # null to disable
+# auto_stop_times = ["17:00", "22:00"]   # [] to disable; one daily stop schedule per entry
 # auto_start_time = "08:00"   # weekdays; null = start manually
 #
 # Spot user pool that scales to zero when idle. Free Trial quota in swedencentral is

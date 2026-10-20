@@ -16,7 +16,8 @@ control plane is free.
 ## Decision
 
 1. **Auto-stop every evening.** `modules/azure/aks-autostop` creates an Azure Automation
-   account with a runbook that stops the cluster daily at 19:00 Europe/Oslo. The account
+   account with a runbook that stops the cluster daily at 17:00 Europe/Oslo, and again at
+   22:00 for evenings it was started for late work (one schedule per entry in `stop_times`). The account
    lives in North Europe because Free Trial subscriptions can only create Automation
    accounts in six regions; it controls the cluster through ARM, so the region is irrelevant. Start is
    manual by default (`make aks-start`), with an optional weekday morning start schedule.
