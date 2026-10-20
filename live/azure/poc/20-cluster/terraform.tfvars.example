@@ -2,6 +2,11 @@
 # kubernetes_version     = "1.36"
 # admin_group_object_ids = ["<entra-group-object-id>"]
 #
+# API server source firewall (ADR 0009): trusted egress (Zscaler Oslo) + extras.
+# api_server_extra_sources = ["203.0.113.7/32"]   # your home IP
+# api_server_restricted    = false                 # reopen to the Internet (Entra ID still required)
+# api_server_include_cluster_egress = false        # first apply of a brand-new cluster only
+#
 # Cost controls (ADR 0004)
 # auto_stop_times = ["17:00", "22:00"]   # [] to disable; one daily stop schedule per entry
 # auto_start_time = "08:00"   # weekdays; null = start manually

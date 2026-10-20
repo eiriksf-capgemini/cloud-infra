@@ -73,6 +73,24 @@ variable "auto_start_time" {
   default     = null
 }
 
+variable "api_server_restricted" {
+  description = "Limit the public API server endpoint to ../allowlist/trusted-egress-ipv4.txt plus api_server_extra_sources (ADR 0009). false = reachable from anywhere, Entra ID still required."
+  type        = bool
+  default     = true
+}
+
+variable "api_server_include_cluster_egress" {
+  description = "Also authorise the cluster's own outbound IP(s), read from its load balancer, so in-cluster controllers keep reaching the API server. Set false for the very first apply (the load balancer does not exist yet; AKS adds the IP itself at creation)."
+  type        = bool
+  default     = true
+}
+
+variable "api_server_extra_sources" {
+  description = "Extra CIDRs allowed to reach the API server, e.g. a home IP as x.x.x.x/32. Max 200 in total."
+  type        = list(string)
+  default     = []
+}
+
 variable "admin_group_object_ids" {
   description = "Entra ID groups that get cluster-admin. Empty is fine for a POC; the deployer is granted admin anyway."
   type        = list(string)

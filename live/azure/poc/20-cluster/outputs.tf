@@ -30,3 +30,8 @@ output "auto_stop" {
 output "auto_start" {
   value = local.autostop_enabled ? module.autostop[0].start_schedule : "disabled"
 }
+
+output "api_server_allowed_sources" {
+  description = "CIDRs that may reach the API server, or 'any'."
+  value       = length(local.api_server_sources) == 0 ? ["any"] : local.api_server_sources
+}

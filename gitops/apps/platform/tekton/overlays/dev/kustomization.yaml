@@ -5,6 +5,8 @@ labels:
   - pairs:
       environment: dev
     includeSelectors: false
+# The Tekton Dashboard has no authentication of its own, so it is not published through
+# the ingress (ADR 0009). Reach it like Argo CD, through the Kubernetes API (Entra ID):
+#   kubectl -n platform port-forward svc/tekton-dashboard 9097:9097   -> http://localhost:9097
 resources:
   - ../../base
-  - dashboard-ingress.yaml

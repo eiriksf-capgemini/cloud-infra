@@ -20,11 +20,14 @@ modules/            reusable building blocks
 
 live/<cloud>/<env>/ one directory per stack, each with its own state
   azure/poc/backend.hcl   shared remote-state settings for the environment
+  azure/poc/allowlist/    source-IP allowlists shared by the stacks (Norway prefixes, operator egress; ADR 0009)
   azure/poc/00-tfstate    state storage account + subscription budget alert (local state itself)
   azure/poc/10-network    uses modules/azure/network
   azure/poc/20-cluster    uses modules/azure/aks
   azure/poc/25-registry   uses modules/azure/acr; grants AcrPull to the cluster's kubelet identity
   azure/poc/30-gitops     uses modules/k8s/argocd-bootstrap
+
+scripts/            helpers (country-prefixes.py regenerates the country allowlist)
 
 gitops/             what Argo CD reconciles INTO the cluster
   clusters/azure-dev      Helm chart: platform Applications + workload ApplicationSet (environment: dev)
@@ -135,6 +138,38 @@ az acr repository list --name acrmadbadgerbadger -o table
 
 Pin `image:` in `gitops/apps/<app>/overlays/<env>` to `acrmadbadgerbadger.azurecr.io/<repo>:<tag>`.
 
+## Access control
+
+See [`docs/adr/0009-network-access-and-authentication.md`](docs/adr/0009-network-access-and-authentication.md).
+
+- **Ingress (80/443)** accepts traffic only from IPv4 prefixes registered to Norway plus the
+  operators' Zscaler Oslo egress (`live/azure/poc/allowlist/`). Everything else is dropped
+  by the NSG. Refresh the country list with `make allowlist-refresh` and apply `10-network`.
+- **AKS API server and the state storage account** accept only the trusted-egress ranges
+  (`20-cluster`: `api_server_extra_sources`, `00-tfstate`: `storage_extra_sources` for a
+  home IP). Entra ID is still required on top.
+- **Dashboards are not public.** Argo CD and the Tekton Dashboard are reached through the
+  Kubernetes API, i.e. after Entra ID login:
+
+  ```sh
+  kubectl -n platform port-forward svc/argocd-server 8080:443        # https://localhost:8080, user admin
+  kubectl -n platform port-forward svc/tekton-dashboard 9097:9097    # http://localhost:9097 (read-only)
+  ```
+
+- **Locked out?** Your egress moved (new Zscaler datacenter, home network). ARM still
+  works, so add the range and re-apply, or patch directly:
+
+  ```sh
+  curl -s ifconfig.co                                                                   # what Azure sees
+  az aks update -g rg-cloudinfra-poc -n aks-cloudinfra-poc --api-server-authorized-ip-ranges <existing>,<ip>/32
+  az storage account network-rule add -g rg-cloudinfra-poc-tfstate -n stcloudinfrapocec8e --ip-address <ip>
+  ```
+
+  then add the range to `trusted-egress-ipv4.txt` (or the stack's `*_extra_sources`) so the
+  next apply does not remove it.
+- Not restricted (Entra ID only): ACR (Basic SKU has no firewall), Azure Monitor workspace,
+  Automation account.
+
 ## Day-to-day
 
 ```sh
@@ -154,5 +189,7 @@ Optional: `pre-commit install` to run fmt/validate on commit.
 - [ ] AWS: `modules/aws/{network,eks}`, `live/aws/poc/*`
 - [ ] GCP: `modules/gcp/{network,gke}`, `live/gcp/poc/*`
 - [ ] CI: GitHub Actions with OIDC to Azure running `plan` on PRs
+- [x] Access control: Norway + operator-egress allowlists on ingress, API server and state storage; dashboards via port-forward only (ADR 0009)
 - [ ] DNS zone, ClusterIssuers, external-dns
+- [ ] SSO (oauth2-proxy + Entra ID) in front of dashboards if they must be published
 - [ ] Consider Terragrunt if `live/` outgrows the Makefile + backend.hcl approach

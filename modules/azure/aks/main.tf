@@ -78,6 +78,16 @@ resource "azurerm_kubernetes_cluster" "this" {
     admin_group_object_ids = var.admin_group_object_ids
   }
 
+  # Source-IP firewall on the public API server endpoint (ADR 0009). Authentication is
+  # still Entra ID; this only limits who can even reach the login. Max 200 ranges; AKS adds
+  # the cluster's own outbound IP automatically.
+  dynamic "api_server_access_profile" {
+    for_each = length(var.api_server_authorized_ip_ranges) == 0 ? [] : [1]
+    content {
+      authorized_ip_ranges = var.api_server_authorized_ip_ranges
+    }
+  }
+
   tags = var.tags
 
   depends_on = [azurerm_role_assignment.cluster_identity_subnet]
