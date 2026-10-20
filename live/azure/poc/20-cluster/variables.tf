@@ -23,7 +23,7 @@ variable "kubernetes_version" {
 
 variable "system_node_pool" {
   type = object({
-    vm_size    = optional(string, "Standard_B2ls_v2") # cheapest x86 size AKS accepts for a system pool (ADR 0004)
+    vm_size    = optional(string, "Standard_B2as_v2") # cheapest x86 size AKS accepts for a system pool (ADR 0004)
     node_count = optional(number, 1)
     os_disk_gb = optional(number, 32) # P4 tier; AKS minimum is 30
   })

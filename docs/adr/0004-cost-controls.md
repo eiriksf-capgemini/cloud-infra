@@ -27,8 +27,10 @@ control plane is free.
    Sweden Central and UK South expose the full catalogue. Cheapest AKS-eligible x86 sizes
    there are `Standard_B2als_v2` (AMD, $0.039/h) and `Standard_B2ls_v2` (Intel, $0.043/h), both
    2 vCPU / 4 GB. The first apply of `B2als_v2` failed with `AllocationFailed` (no capacity in
-   the region at that moment), so the default is `B2ls_v2`; if that also fails, use
-   `Standard_D2als_v6` or `Standard_D2ls_v5` (~$0.085/h). `Standard_B2pls_v2` (arm64) is
+   the region at that moment), so `B2ls_v2` was used first. With Argo CD, Tekton (Pipelines + Triggers), ingress-nginx
+   and cert-manager the 4 GB node ran out of schedulable memory, so the default moved to
+   `Standard_B2as_v2` (2 vCPU / 8 GB, $0.078/h, ~$17/month with auto-stop). A 4-vCPU size
+   would consume the whole regional quota and leave no room for upgrade surge nodes. `Standard_B2pls_v2` (arm64) is
    $0.034/h and was skipped only to avoid arm64 image surprises. With auto-stop the node
    costs roughly $9/month; the load balancer and public IP add a similar amount. No Log Analytics,
    no Defender, no Azure Policy add-on in the POC cluster. Enable them deliberately later.
