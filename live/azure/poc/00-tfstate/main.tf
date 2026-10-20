@@ -67,3 +67,38 @@ resource "azurerm_role_assignment" "deployer_blob_contributor" {
   role_definition_name = "Storage Blob Data Contributor"
   principal_id         = data.azurerm_client_config.current.object_id
 }
+
+# Subscription-wide spending guardrail (ADR 0004). Lives here because this stack is
+# the one that is never destroyed. Budgets do not stop spending; they only alert.
+resource "azurerm_consumption_budget_subscription" "poc" {
+  name            = "budget-${var.name_prefix}"
+  subscription_id = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  amount          = var.monthly_budget_amount
+  time_grain      = "Monthly"
+
+  time_period {
+    start_date = formatdate("YYYY-MM-01'T'00:00:00Z", timestamp())
+  }
+
+  notification {
+    enabled        = true
+    threshold      = 80
+    operator       = "GreaterThan"
+    threshold_type = "Actual"
+    contact_roles  = ["Owner"]
+    contact_emails = var.budget_contact_emails
+  }
+
+  notification {
+    enabled        = true
+    threshold      = 100
+    operator       = "GreaterThan"
+    threshold_type = "Forecasted"
+    contact_roles  = ["Owner"]
+    contact_emails = var.budget_contact_emails
+  }
+
+  lifecycle {
+    ignore_changes = [time_period[0].start_date]
+  }
+}

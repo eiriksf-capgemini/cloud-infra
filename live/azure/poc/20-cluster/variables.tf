@@ -34,11 +34,26 @@ variable "user_node_pools" {
   type = map(object({
     vm_size    = string
     node_count = optional(number, 1)
+    min_count  = optional(number)
+    max_count  = optional(number)
     os_disk_gb = optional(number, 64)
     labels     = optional(map(string), {})
     taints     = optional(list(string), [])
+    spot       = optional(bool, false)
   }))
   default = {}
+}
+
+variable "auto_stop_time" {
+  description = "Daily time (HH:MM, Europe/Oslo) to stop the cluster. null disables auto-stop."
+  type        = string
+  default     = "19:00"
+}
+
+variable "auto_start_time" {
+  description = "Weekday time (HH:MM, Europe/Oslo) to start the cluster. null = start manually with `make aks-start`."
+  type        = string
+  default     = null
 }
 
 variable "admin_group_object_ids" {

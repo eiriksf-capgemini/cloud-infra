@@ -1,6 +1,12 @@
 # All variables have POC defaults; override here if needed (file is gitignored).
-# kubernetes_version     = "1.33"
+# kubernetes_version     = "1.36"
 # admin_group_object_ids = ["<entra-group-object-id>"]
+#
+# Cost controls (ADR 0004)
+# auto_stop_time  = "19:00"   # null to disable
+# auto_start_time = "08:00"   # weekdays; null = start manually
+#
+# Spot user pool that scales to zero when idle:
 # user_node_pools = {
-#   workload = { vm_size = "Standard_D4s_v5", node_count = 1 }
+#   spot = { vm_size = "Standard_D2s_v5", min_count = 0, max_count = 3, spot = true }
 # }

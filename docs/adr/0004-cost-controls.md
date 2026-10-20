@@ -1,0 +1,48 @@
+# ADR 0004: Cost controls for the development environment
+
+Date: 2026-10-20
+Status: Accepted
+
+## Context
+
+This is a development / proof-of-concept environment on a **Free Trial** subscription
+(spending limit on). Nothing needs to run outside working hours, and the owner wants the
+bill as close to zero as possible without losing the ability to iterate.
+
+Where AKS money goes, roughly in order: node VMs (by far the largest), the Standard load
+balancer rules and public IP, node OS disks, log/metrics ingestion if enabled. The Free tier
+control plane is free.
+
+## Decision
+
+1. **Auto-stop every evening.** `modules/azure/aks-autostop` creates an Azure Automation
+   account with a runbook that stops the cluster daily at 19:00 Europe/Oslo. Start is
+   manual by default (`make aks-start`), with an optional weekday morning start schedule.
+   A stopped cluster bills no node compute; nodes, workloads and Argo CD state survive.
+2. **One small node, Free control plane, nothing optional enabled.** No Log Analytics,
+   no Defender, no Azure Policy add-on in the POC cluster. Enable them deliberately later.
+3. **Spot + scale-to-zero for extra capacity.** `user_node_pools` support `spot = true`
+   and `min_count = 0`, so burst workloads run on Spot VMs and disappear when idle.
+4. **Subscription budget alert** in `00-tfstate`: 80% actual and 100% forecast of a
+   monthly amount, e-mailed to subscription Owners.
+5. **Destroy for long breaks.** `tofu destroy` the `20-cluster` stack if the cluster is
+   unused for more than a few days. `00-tfstate` and `10-network` cost cents and stay.
+
+## What was considered and not done
+
+- **Native AKS scheduled stop/start**: does not exist. Hence Automation.
+- **GitHub Actions cron** for stop/start: works, but needs CI + OIDC federation first.
+  Reasonable to switch to later when CI exists.
+- **Stopping Argo CD from scaling things**: not needed; a stopped cluster runs nothing.
+- **Ephemeral OS disks**: need a VM size with a local cache; the default `D2s_v5` has
+  none. Revisit if the node size changes to a `*ds*` family.
+
+## Consequences
+
+- The cluster is **off** when you arrive in the morning unless `auto_start_time` is set.
+  Start takes 2–4 minutes.
+- Azure does not guarantee a cluster stopped for >30 days will start again. Destroy
+  instead for long gaps.
+- While stopped, the load balancer rules/IP and OS disks still bill a few USD a month.
+- Free Trial quota is small (typically 4 vCPUs per family per region). Node size and count
+  must fit; check with `az vm list-usage -l <region>` before changing `vm_size`.

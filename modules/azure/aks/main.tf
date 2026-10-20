@@ -95,15 +95,26 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
   mode                  = "User"
   vm_size               = each.value.vm_size
-  node_count            = each.value.node_count
   os_disk_size_gb       = each.value.os_disk_gb
   vnet_subnet_id        = var.subnet_id
   node_labels           = each.value.labels
   node_taints           = each.value.taints
   tags                  = var.tags
 
+  # Fixed size unless min/max are given, then autoscaled (min_count = 0 allowed).
+  auto_scaling_enabled = each.value.min_count != null && each.value.max_count != null
+  node_count           = each.value.min_count != null && each.value.max_count != null ? null : each.value.node_count
+  min_count            = each.value.min_count
+  max_count            = each.value.max_count
+
+  # Spot pricing for interruptible dev workloads.
+  priority        = each.value.spot ? "Spot" : "Regular"
+  eviction_policy = each.value.spot ? "Delete" : null
+  spot_max_price  = each.value.spot ? -1 : null
+
   lifecycle {
-    ignore_changes = [orchestrator_version]
+    # node_count drifts when the autoscaler is on.
+    ignore_changes = [orchestrator_version, node_count]
   }
 }
 

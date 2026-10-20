@@ -21,3 +21,15 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "monthly_budget_amount" {
+  description = "Monthly budget in the subscription's billing currency. Alerts at 80% actual and 100% forecast."
+  type        = number
+  default     = 500
+}
+
+variable "budget_contact_emails" {
+  description = "Extra e-mail recipients for budget alerts. Subscription Owners are always notified."
+  type        = list(string)
+  default     = []
+}

@@ -22,3 +22,11 @@ output "get_credentials_command" {
   description = "Configure kubectl (Entra ID login via kubelogin)."
   value       = "az aks get-credentials --resource-group ${module.aks.resource_group_name} --name ${module.aks.cluster_name} && kubelogin convert-kubeconfig -l azurecli"
 }
+
+output "auto_stop" {
+  value = var.auto_stop_time == null ? "disabled" : module.autostop[0].stop_schedule
+}
+
+output "auto_start" {
+  value = var.auto_stop_time == null ? "disabled" : module.autostop[0].start_schedule
+}

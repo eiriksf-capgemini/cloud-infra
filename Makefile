@@ -16,7 +16,7 @@ export TF_PLUGIN_CACHE_DIR ?= $(HOME)/.terraform.d/plugin-cache
 BACKEND_HCL := $(wildcard $(STACK)/../backend.hcl)
 BACKEND_ARG := $(if $(BACKEND_HCL),-backend-config=../backend.hcl,)
 
-.PHONY: help init plan apply destroy output fmt fmt-check validate validate-all clean
+.PHONY: help init plan apply destroy output fmt fmt-check validate validate-all clean aks-stop aks-start aks-status
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -56,3 +56,16 @@ validate-all: ## Validate every module and stack (no credentials needed)
 
 clean: ## Remove local .terraform dirs (keeps lock files and state)
 	find . -type d -name .terraform -prune -exec rm -rf {} +
+
+# --- Cost controls: manual stop/start of the POC cluster (see ADR 0004) ---
+AKS_RG   ?= rg-cloudinfra-poc
+AKS_NAME ?= aks-cloudinfra-poc
+
+aks-stop: ## Stop the AKS cluster now (no node compute billed while stopped)
+	az aks stop --resource-group $(AKS_RG) --name $(AKS_NAME)
+
+aks-start: ## Start the AKS cluster (takes a few minutes)
+	az aks start --resource-group $(AKS_RG) --name $(AKS_NAME)
+
+aks-status: ## Show the cluster power state
+	az aks show --resource-group $(AKS_RG) --name $(AKS_NAME) --query '{name:name, power:powerState.code, nodes:agentPoolProfiles[].{pool:name,size:vmSize,count:count}}' -o json

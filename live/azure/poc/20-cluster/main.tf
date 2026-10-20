@@ -37,3 +37,21 @@ module "aks" {
   subnet_id              = data.azurerm_subnet.aks.id
   admin_group_object_ids = var.admin_group_object_ids
 }
+
+# Cost control: stop the cluster every evening (ADR 0004). Start it again with
+# `make aks-start`, or set auto_start_time for weekday mornings.
+module "autostop" {
+  count  = var.auto_stop_time == null ? 0 : 1
+  source = "../../../../modules/azure/aks-autostop"
+
+  name                        = local.cluster_name
+  location                    = var.location
+  resource_group_name         = data.azurerm_resource_group.network.name
+  cluster_id                  = module.aks.cluster_id
+  cluster_name                = module.aks.cluster_name
+  cluster_resource_group_name = module.aks.resource_group_name
+  stop_time                   = var.auto_stop_time
+  start_time                  = var.auto_start_time
+  timezone                    = "Europe/Oslo"
+  tags                        = local.tags
+}

@@ -12,12 +12,13 @@ Decisions and their reasoning live in [`docs/adr/`](docs/adr/). Read those three
 modules/            reusable building blocks
   azure/network     RG, VNet, AKS subnet, NSG
   azure/aks         AKS cluster implementing the common cluster interface (ADR 0002)
+  azure/aks-autostop  Azure Automation schedule that stops the cluster nightly (ADR 0004)
   aws/, gcp/        placeholders: same interface, not implemented yet
   k8s/argocd-bootstrap  Argo CD + root app-of-apps; cloud-agnostic (helm provider only)
 
 live/<cloud>/<env>/ one directory per stack, each with its own state
   azure/poc/backend.hcl   shared remote-state settings for the environment
-  azure/poc/00-tfstate    creates the state storage account (local state itself)
+  azure/poc/00-tfstate    state storage account + subscription budget alert (local state itself)
   azure/poc/10-network    uses modules/azure/network
   azure/poc/20-cluster    uses modules/azure/aks
   azure/poc/30-gitops     uses modules/k8s/argocd-bootstrap
@@ -46,8 +47,14 @@ brew install opentofu azure-cli kubectl helm argocd kubelogin
 tofu version        # pinned in .tool-versions (1.13.x)
 ```
 
-An **Azure subscription** with rights to create resource groups and role assignments.
-`az account list` must show it; a tenant-only login is not enough.
+An **Azure subscription** with Owner (or Contributor + User Access Administrator) rights.
+On a fresh subscription, register the resource providers once; this saves minutes on the
+first apply:
+
+```sh
+for p in Microsoft.Compute Microsoft.Network Microsoft.Storage Microsoft.ManagedIdentity \
+         Microsoft.ContainerService Microsoft.Automation; do az provider register -n $p --wait; done
+```
 
 ## First deployment (when a subscription is available)
 
@@ -82,6 +89,20 @@ installs ingress-nginx and cert-manager. From here on, change the cluster by com
 `gitops/`.
 
 Tear down in reverse: `30-gitops` → `20-cluster` → `10-network`; keep `00-tfstate`.
+
+## Cost controls (dev environment)
+
+See [`docs/adr/0004-cost-controls.md`](docs/adr/0004-cost-controls.md).
+
+- The cluster **auto-stops daily at 19:00 Europe/Oslo** (Azure Automation, free tier).
+  Start it with `make aks-start`, check with `make aks-status`, stop early with `make aks-stop`.
+  Set `auto_start_time = "08:00"` in `20-cluster` tfvars for weekday auto-start, or
+  `auto_stop_time = null` to disable auto-stop.
+- A **subscription budget alert** (default 500 in billing currency) is created by `00-tfstate`
+  and mails subscription Owners at 80% actual / 100% forecast.
+- Extra capacity should be a **Spot user pool with `min_count = 0`**; see
+  `live/azure/poc/20-cluster/terraform.tfvars.example`.
+- Unused for days? `make destroy STACK=live/azure/poc/20-cluster`. Network and state stay.
 
 ## Day-to-day
 

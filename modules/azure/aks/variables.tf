@@ -34,9 +34,12 @@ variable "user_node_pools" {
   type = map(object({
     vm_size    = string
     node_count = optional(number, 1)
+    min_count  = optional(number) # set min/max to enable the cluster autoscaler (min may be 0)
+    max_count  = optional(number)
     os_disk_gb = optional(number, 64)
     labels     = optional(map(string), {})
     taints     = optional(list(string), [])
+    spot       = optional(bool, false) # Spot VMs: up to ~90% cheaper, can be evicted; Azure adds the spot taint
   }))
   default = {}
 }
