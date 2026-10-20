@@ -1,0 +1,7 @@
+# All values are set by the OpenTofu module.
+name: root
+project: default
+repoURL: ""
+targetRevision: main
+path: gitops/clusters/azure-poc
+destinationServer: https://kubernetes.default.svc

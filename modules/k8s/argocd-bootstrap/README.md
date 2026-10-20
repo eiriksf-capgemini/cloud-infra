@@ -1,7 +1,7 @@
 # modules/k8s/argocd-bootstrap
 
-Installs Argo CD from the official Helm chart and creates the root app-of-apps `Application`
-inside the same release (see ADR 0003). Cloud-agnostic: requires only a configured `helm`
+Installs Argo CD from the official Helm chart, then the root app-of-apps `Application` as a
+second Helm release from the embedded `charts/root-app` chart (see ADR 0003). Cloud-agnostic: requires only a configured `helm`
 provider.
 
 ## Inputs

@@ -1,49 +1,16 @@
-# Installs Argo CD and, in the same Helm release, the root "app-of-apps" Application.
+# Installs Argo CD, then the root "app-of-apps" Application as a second, tiny Helm
+# release from a chart embedded in this module (charts/root-app).
 #
-# Why extraObjects instead of kubernetes_manifest: the Application CRD is created by
-# this very release, so a separate kubernetes_manifest resource cannot be planned
-# before the first apply. Shipping the root Application through the chart's
-# `extraObjects` value sidesteps that and keeps this module down to one provider.
+# Why two releases: the Application CRD is created by the Argo CD release. Helm cannot
+# build (REST-map) an object of a kind the API server does not know yet, so shipping the
+# Application inside the same release fails on first install, and kubernetes_manifest
+# cannot even plan it. A dependent release sidesteps both, and keeps this module down to
+# the helm provider only.
 #
 # This module is cloud-agnostic: it only needs a working Kubernetes connection
 # configured on the helm provider by the calling stack.
 
 locals {
-  root_application = {
-    apiVersion = "argoproj.io/v1alpha1"
-    kind       = "Application"
-    metadata = {
-      name       = "root"
-      namespace  = var.namespace
-      finalizers = ["resources-finalizer.argocd.argoproj.io"]
-    }
-    spec = {
-      project = "default"
-      source = {
-        repoURL        = var.gitops_repo_url
-        targetRevision = var.gitops_revision
-        path           = var.gitops_path
-        helm = {
-          parameters = [
-            { name = "repoURL", value = var.gitops_repo_url },
-            { name = "targetRevision", value = var.gitops_revision },
-          ]
-        }
-      }
-      destination = {
-        server    = "https://kubernetes.default.svc"
-        namespace = var.namespace
-      }
-      syncPolicy = {
-        automated = {
-          prune    = true
-          selfHeal = true
-        }
-        syncOptions = ["CreateNamespace=true"]
-      }
-    }
-  }
-
   default_values = {
     # Keep the footprint small for a one-node POC.
     dex           = { enabled = false }
@@ -58,7 +25,6 @@ locals {
         "server.insecure" = false
       }
     }
-    extraObjects = var.create_root_app ? [local.root_application] : []
   }
 }
 
@@ -73,13 +39,27 @@ resource "helm_release" "argocd" {
   wait    = true
   timeout = 600
 
-  # The root Application (an argoproj.io CR) ships in the same release as the CRD that
-  # defines it. Helm's pre-install OpenAPI validation rejects unknown kinds, so skip it;
-  # Helm still installs CRDs first and unknown kinds last in its kind ordering.
-  disable_openapi_validation = true
-
   values = [
     yamlencode(local.default_values),
     yamlencode(var.values),
   ]
+}
+
+resource "helm_release" "root_app" {
+  count = var.create_root_app ? 1 : 0
+
+  name      = "argocd-root-app"
+  chart     = "${path.module}/charts/root-app"
+  namespace = var.namespace
+
+  values = [yamlencode({
+    name              = "root"
+    project           = "default"
+    repoURL           = var.gitops_repo_url
+    targetRevision    = var.gitops_revision
+    path              = var.gitops_path
+    destinationServer = "https://kubernetes.default.svc"
+  })]
+
+  depends_on = [helm_release.argocd]
 }
