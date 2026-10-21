@@ -59,6 +59,16 @@ configuration:
     allowedOrigins:
       - "http://console.openchoreo.20.91.237.179.nip.io"
 
+# PVCs are Helm pre-install hooks in this chart; WaitForFirstConsumer would deadlock the Argo CD
+# sync (gitops/platform/storage-classes). Same disk SKU as the default class.
+persistence:
+  storageClass: managed-csi-immediate
+certs:
+  persistence:
+    storageClass: managed-csi-immediate
+secrets:
+  persistence:
+    storageClass: managed-csi-immediate
 setup:
   enabled: true
 

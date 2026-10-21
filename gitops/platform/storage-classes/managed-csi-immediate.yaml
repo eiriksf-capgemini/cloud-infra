@@ -1,0 +1,12 @@
+# Same disk type as AKS's `default` class (Standard SSD LRS), but binds at creation. Fine on a
+# one-node cluster without zones; on a zonal multi-node cluster prefer WaitForFirstConsumer.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: managed-csi-immediate
+provisioner: disk.csi.azure.com
+parameters:
+  skuName: StandardSSD_LRS
+reclaimPolicy: Delete
+allowVolumeExpansion: true
+volumeBindingMode: Immediate
