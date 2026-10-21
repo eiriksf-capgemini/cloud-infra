@@ -1,0 +1,27 @@
+# KEDA (ADR 0010): scale-to-zero for HTTP workloads together with the HTTP add-on. One
+# replica each, requests trimmed from upstream's 3 x 100m to fit the single node.
+operator:
+  replicaCount: 1
+metricsServer:
+  replicaCount: 1
+webhooks:
+  replicaCount: 1
+resources:
+  operator:
+    requests:
+      cpu: 50m
+      memory: 100Mi
+    limits:
+      memory: 500Mi
+  metricServer:
+    requests:
+      cpu: 50m
+      memory: 100Mi
+    limits:
+      memory: 500Mi
+  webhooks:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 200Mi

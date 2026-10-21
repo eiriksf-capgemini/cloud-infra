@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openchoreo-data-plane
+  namespace: openchoreo-data-plane
+spec:
+  ingressClassName: nginx
+  rules:
+    # Every component OpenChoreo exposes gets <component>-<env>.openchoreoapis.20.91.237.179.nip.io
+    - host: "*.openchoreoapis.20.91.237.179.nip.io"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-default
+                port:
+                  number: 80

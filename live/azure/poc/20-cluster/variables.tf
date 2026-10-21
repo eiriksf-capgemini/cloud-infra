@@ -23,7 +23,7 @@ variable "kubernetes_version" {
 
 variable "system_node_pool" {
   type = object({
-    vm_size    = optional(string, "Standard_B2s_v2") # 2 vCPU / 8 GB, Intel; see ADR 0004 for the size history
+    vm_size    = optional(string, "Standard_B4s_v2") # 4 vCPU / 16 GB, Intel; uses the whole Free Trial quota, see ADR 0004 / 0010
     node_count = optional(number, 1)
     os_disk_gb = optional(number, 32) # P4 tier; AKS minimum is 30
   })
@@ -95,6 +95,12 @@ variable "admin_group_object_ids" {
   description = "Entra ID groups that get cluster-admin. Empty is fine for a POC; the deployer is granted admin anyway."
   type        = list(string)
   default     = []
+}
+
+variable "public_ip_names" {
+  description = "Short names of the static public IPs created by 10-network (pip-<prefix>-<name>) that LoadBalancer Services may use. Looked up by name (ADR 0002)."
+  type        = list(string)
+  default     = ["ingress"]
 }
 
 variable "workload_identity_enabled" {

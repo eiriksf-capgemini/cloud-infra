@@ -1,0 +1,39 @@
+# OpenChoreo control plane (ADR 0010). Modelled on the reference single-cluster install
+# (install/k3d/single-cluster/values-cp.yaml, release-v1.3): plain HTTP, hostnames on the
+# ingress-nginx static IP via nip.io, Thunder as OIDC provider, secrets from OpenBao via
+# External Secrets. The Gateway is ClusterIP (GatewayParameters openchoreo-cp) and is fronted
+# by ingress-nginx (gitops/platform/openchoreo-ingress).
+openchoreoApi:
+  http:
+    hostnames:
+      - api.openchoreo.20.91.237.179.nip.io
+  config:
+    server:
+      publicUrl: "http://api.openchoreo.20.91.237.179.nip.io"
+backstage:
+  secretName: backstage-secrets   # ExternalSecret in gitops/platform/openchoreo-secrets
+  baseUrl: "http://console.openchoreo.20.91.237.179.nip.io"
+  http:
+    hostnames:
+      - console.openchoreo.20.91.237.179.nip.io
+  auth:
+    redirectUrls:
+      - "http://console.openchoreo.20.91.237.179.nip.io/api/auth/openchoreo-auth/handler/frame"
+security:
+  oidc:
+    issuer: "http://thunder.openchoreo.20.91.237.179.nip.io"
+    jwksUrl: "http://thunder.openchoreo.20.91.237.179.nip.io/oauth2/jwks"
+    authorizationUrl: "http://thunder.openchoreo.20.91.237.179.nip.io/oauth2/authorize"
+    tokenUrl: "http://thunder.openchoreo.20.91.237.179.nip.io/oauth2/token"
+gateway:
+  httpPort: 80
+  tls:
+    enabled: false
+  infrastructure:
+    parametersRef:
+      group: gateway.kgateway.dev
+      kind: GatewayParameters
+      name: openchoreo-cp
+features:
+  secretManagement:
+    enabled: true

@@ -50,6 +50,24 @@ Pin images by tag or digest in the overlay so each environment is explicit and r
 - Prefer kustomize for your own apps and Helm (via `gitops/platform`) for third-party charts.
 - Dev-only conveniences (nip.io ingress hosts, debug flags) live in `overlays/dev` only.
 
+## Scale to zero (HTTP apps)
+
+KEDA and its HTTP add-on run on the cluster (ADR 0010). An HTTP app that can tolerate a cold
+start of a few seconds should scale to zero when idle; `demo/podinfo` is the reference. Three
+things in the dev overlay, nothing in the base:
+
+1. `HTTPScaledObject` with `hosts` = the app's ingress host, `scaleTargetRef` = Deployment +
+   Service + port, `replicas.min: 0`, `scaledownPeriod` (seconds idle before 0).
+2. An `ExternalName` Service in the app namespace pointing at
+   `keda-add-ons-http-interceptor-proxy.keda.svc.cluster.local` (an Ingress can only
+   reference a Service in its own namespace).
+3. The Ingress backend becomes that alias on port 8080, with
+   `nginx.ingress.kubernetes.io/upstream-vhost: <host>` so the interceptor sees the host.
+
+Do not do this for anything that must react without traffic (controllers, webhooks,
+schedulers) or that other pods call by Service name: the interceptor only fronts the
+ingress path.
+
 ## Current namespaces
 
 | Folder | Purpose |

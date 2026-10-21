@@ -8,6 +8,9 @@ controller:
     annotations:
       # Azure Standard LB needs an HTTP probe path, otherwise nodes are marked unhealthy.
       service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /healthz
+      # Static IP from 10-network (ADR 0010), so nip.io hostnames survive a cluster recreate.
+      service.beta.kubernetes.io/azure-pip-name: pip-cloudinfra-poc-ingress
+      service.beta.kubernetes.io/azure-load-balancer-resource-group: rg-cloudinfra-poc
   resources:
     requests:
       cpu: 50m # idles at a few millicores; 100m was 5% of the node (ADR 0004)

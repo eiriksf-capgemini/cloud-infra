@@ -9,7 +9,7 @@ An audit on 2026-10-20 of everything reachable from the Internet:
 
 | Endpoint | Reachable from | Authentication | Verdict |
 |---|---|---|---|
-| Ingress LB `57.174.156.100` :80/:443 (podinfo, Tekton Dashboard) | anywhere (NSG `Internet`) | podinfo: none (demo); Tekton Dashboard: **none** (read-only) | fix |
+| Ingress LB `57.174.156.100` :80/:443 (podinfo, Tekton Dashboard); static `20.91.237.179` since ADR 0010, also fronting OpenChoreo | anywhere (NSG `Internet`) | podinfo: none (demo); Tekton Dashboard: **none** (read-only) | fix |
 | Argo CD | not published (ClusterIP); `kubectl port-forward` only | `admin` with rotated password, no anonymous, RBAC default deny, TLS | ok |
 | AKS API server (public FQDN) | anywhere | Entra ID + Azure RBAC; local accounts still enabled for bootstrap | narrow |
 | ACR `acrmadbadgerbadger` | anywhere | Entra ID only, admin user off, no anonymous pull | Basic SKU has no firewall |

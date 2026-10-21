@@ -1,0 +1,11 @@
+# kgateway controller (ADR 0010): the Gateway API implementation OpenChoreo requires. Lives in
+# openchoreo-control-plane like the reference install. Proxy pods are created per Gateway and
+# sized by the GatewayParameters in gitops/platform/openchoreo-gateway-params.
+controller:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 512Mi

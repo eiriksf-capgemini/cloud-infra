@@ -14,7 +14,7 @@ expose the same `cluster_*` / `oidc_issuer_url` outputs and the same `name`,
 | `name` | string | – |
 | `location` | string | – |
 | `kubernetes_version` | string | `null` (region default) |
-| `system_node_pool` | object | 1× `Standard_B2s_v2`, 32 GB disk |
+| `system_node_pool` | object | 1× `Standard_B4s_v2`, 32 GB disk |
 | `user_node_pools` | map(object) | `{}` |
 | `tags` | map(string) | `{}` |
 
@@ -31,6 +31,7 @@ expose the same `cluster_*` / `oidc_issuer_url` outputs and the same `name`,
 | `pod_cidr` / `service_cidr` / `dns_service_ip` | string | `10.244.0.0/16` / `10.0.0.0/16` / `10.0.0.10` |
 | `api_server_authorized_ip_ranges` | list(string) | `[]` | source firewall on the public API endpoint, max 200 CIDRs (ADR 0009) |
 | `workload_identity_enabled` | bool | `true` | Entra Workload ID webhook (2 × 100m CPU); OIDC issuer is always on |
+| `public_ip_ids` | list(string) | `[]` | static public IPs the cluster identity may use for LoadBalancer Services (ADR 0010) |
 | `azure_monitor_metrics_enabled` | bool | `false` | ama-metrics add-on for managed Prometheus (ADR 0008) |
 | `azure_monitor_metrics_annotations_allowed` / `..._labels_allowed` | string | `null` | annotation/label keys exported on `kube_*_annotations` / `kube_*_labels` |
 

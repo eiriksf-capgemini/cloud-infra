@@ -40,7 +40,7 @@ Why these settings:
 
 ```sh
 # Dashboard (read-only), dev only, unauthenticated:
-open http://tekton.57.174.156.100.nip.io/
+kubectl -n platform port-forward svc/tekton-dashboard 9097:9097   # http://localhost:9097 (ADR 0009: not published)
 # Argo CD view of the Tekton apps:
 kubectl -n platform port-forward svc/argocd-server 8080:443   # https://localhost:8080
 # Tekton CLI (optional): brew install tektoncd-cli ; tkn pipelinerun list -n platform

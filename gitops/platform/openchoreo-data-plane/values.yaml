@@ -1,0 +1,16 @@
+# OpenChoreo data plane (ADR 0010), same cluster as the control plane. Plain HTTP; the
+# Gateway is ClusterIP (GatewayParameters openchoreo-dp) and fronted by ingress-nginx for
+# *.openchoreoapis.20.91.237.179.nip.io. The cluster-agent verifies the control plane with the
+# cluster-gateway-ca ConfigMap that gitops/platform/openchoreo-gateway-ca maintains.
+gateway:
+  httpPort: 80
+  tls:
+    enabled: false
+  infrastructure:
+    parametersRef:
+      group: gateway.kgateway.dev
+      kind: GatewayParameters
+      name: openchoreo-dp
+# occ remote (local dev tunnel) is not used in the POC; keeps a second LoadBalancer away.
+remoteAgentRouter:
+  enabled: false

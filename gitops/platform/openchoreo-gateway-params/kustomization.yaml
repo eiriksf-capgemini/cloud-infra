@@ -1,0 +1,9 @@
+# kgateway GatewayParameters for the two OpenChoreo Gateways (ADR 0010). Referenced from the
+# charts' gateway.infrastructure.parametersRef. ClusterIP: the Free Trial has no public IP
+# left for them, so ingress-nginx fronts both (gitops/platform/openchoreo-ingress).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespaces.yaml
+  - gatewayparameters-cp.yaml
+  - gatewayparameters-dp.yaml

@@ -1,0 +1,32 @@
+# KEDA HTTP add-on (ADR 0010): the interceptor fronts HTTP apps that may be at zero replicas,
+# holds the request while KEDA scales them up, then proxies. Upstream defaults are sized for
+# production (3 interceptors, 3 scalers, 250m each = 1.5 vCPU); this is a one-node POC.
+operator:
+  replicas: 1
+  watchNamespace: ""
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+scaler:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+interceptor:
+  replicas:
+    min: 1
+    max: 3
+  pdb:
+    enabled: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 256Mi

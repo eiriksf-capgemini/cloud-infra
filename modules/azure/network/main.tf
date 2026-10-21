@@ -62,3 +62,17 @@ resource "azurerm_subnet_network_security_group_association" "aks" {
   subnet_id                 = azurerm_subnet.aks.id
   network_security_group_id = azurerm_network_security_group.aks.id
 }
+
+# Static public IPs for LoadBalancer Services. Created here, not in the AKS node resource
+# group, so they survive `tofu destroy` of 20-cluster; the cluster identity is granted
+# Network Contributor on each one by the AKS module (public_ip_ids).
+resource "azurerm_public_ip" "this" {
+  for_each = toset(var.public_ips)
+
+  name                = "pip-${var.name_prefix}-${each.value}"
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
+  sku                 = "Standard"
+  allocation_method   = "Static"
+  tags                = var.tags
+}

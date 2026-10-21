@@ -1,0 +1,42 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: openchoreo-control-plane
+  namespace: openchoreo-control-plane
+  annotations:
+    # Backstage and the API hold long-lived connections (SSE/websocket).
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: api.openchoreo.20.91.237.179.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-default
+                port:
+                  number: 80
+    - host: console.openchoreo.20.91.237.179.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-default
+                port:
+                  number: 80
+    - host: thunder.openchoreo.20.91.237.179.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway-default
+                port:
+                  number: 80

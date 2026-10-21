@@ -1,0 +1,10 @@
+# Created here (wave 16) so GatewayParameters and the CA ConfigMap can land before the charts.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openchoreo-control-plane
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: openchoreo-data-plane

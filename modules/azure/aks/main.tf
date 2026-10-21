@@ -25,6 +25,16 @@ resource "azurerm_role_assignment" "cluster_identity_subnet" {
   principal_id         = azurerm_user_assigned_identity.cluster.principal_id
 }
 
+# Static public IPs that live outside the node resource group (ADR 0010): the cloud
+# provider needs Network Contributor on each one to attach it to a LoadBalancer frontend.
+resource "azurerm_role_assignment" "cluster_identity_public_ip" {
+  for_each = toset(var.public_ip_ids)
+
+  scope                = each.value
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_user_assigned_identity.cluster.principal_id
+}
+
 resource "azurerm_kubernetes_cluster" "this" {
   name                = var.name
   location            = var.location

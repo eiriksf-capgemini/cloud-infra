@@ -1,0 +1,9 @@
+# OpenChoreo platform configuration (ADR 0010): registers this cluster's data plane with the
+# control plane and installs the upstream getting-started sample (environments dev/staging/
+# prod, a deployment pipeline, the default project and component types) so the portal is
+# usable. Pinned to the chart's appVersion.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - clusterdataplane.yaml
+  - https://raw.githubusercontent.com/openchoreo/openchoreo/v1.3.1/samples/getting-started/all.yaml

@@ -1,0 +1,7 @@
+# Kubernetes Gateway API CRDs (standard channel), pinned. Required by kgateway and the
+# OpenChoreo Gateways (ADR 0010). Upstream ships one YAML per release; the version here
+# must match what OpenChoreo 1.3.x documents (v1.5.1).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.5.1/standard-install.yaml
