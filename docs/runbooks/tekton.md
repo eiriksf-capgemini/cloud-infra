@@ -81,9 +81,13 @@ authenticating proxy (oauth2-proxy with Entra ID) sits in front of it.
    # metrics-server: pick up the ConfigMap once after its first sync
    kubectl -n kube-system rollout restart deployment metrics-server
    ```
-   Budget after all five: ~1300m + Argo CD 125m + managed Prometheus add-on ~300m (PR #2),
-   ~170m free. Next lever if needed: `workload_identity_enabled = false` in the AKS module
-   (nothing uses it yet; 200m). A second node is not an option: the regular pool uses the
+   Measured after all five (2026-10-21 10:36): the managed Prometheus add-on requests
+   **426m**, not ~300m (2 × 170m collectors, 70m node agent, 5m kube-state-metrics, 11m
+   targets operator; 1350Mi memory), and it preempted the ingress controller (50m). Actual
+   use is tiny everywhere (`kubectl top pods -A`: the whole node runs on ~150m), so the next
+   lever is the Entra Workload ID webhook, 2 × 100m with nothing using it:
+   `workload_identity_enabled = false` in `20-cluster` (default since this change). With it
+   off: ~1740m requested incl. ingress, ~160m free. A second node is not an option: the regular pool uses the
    whole 4-vCPU Free Trial quota; a Spot pool has its own 3-vCPU quota but is tainted, so
    only workloads with tolerations land there.
 5. **Helm/Argo gotchas recorded for next time**: `make apply` must use the saved plan

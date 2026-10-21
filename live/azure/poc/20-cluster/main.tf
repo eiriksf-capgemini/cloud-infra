@@ -78,6 +78,11 @@ module "aks" {
   admin_group_object_ids = var.admin_group_object_ids
 
   api_server_authorized_ip_ranges = local.api_server_sources
+
+  # Nothing in the POC uses Entra Workload ID yet (external-dns is disabled, Tekton pushes
+  # are a to-do); its webhook alone would request 200m of the node's 1900m CPU (ADR 0004).
+  # Set true in tfvars when the first federated credential is created; in-place update.
+  workload_identity_enabled = var.workload_identity_enabled
 }
 
 # Cost control: stop the cluster at the end of the working day, and again late in the

@@ -35,7 +35,7 @@ resource "azurerm_kubernetes_cluster" "this" {
   node_resource_group = "${var.resource_group_name}-${var.name}-nodes"
 
   oidc_issuer_enabled               = true
-  workload_identity_enabled         = true
+  workload_identity_enabled         = var.workload_identity_enabled
   local_account_disabled            = var.local_account_disabled
   role_based_access_control_enabled = true
 
