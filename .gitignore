@@ -31,3 +31,7 @@ gitops/**/Chart.lock
 .DS_Store
 .idea/
 .vscode/
+
+# GitHub App identity for coding agents (see README > Contributing); key lives outside the repo
+.gh-app-identity.json
+*.pem
