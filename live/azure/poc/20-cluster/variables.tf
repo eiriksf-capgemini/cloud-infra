@@ -103,6 +103,12 @@ variable "workload_identity_enabled" {
   default     = false
 }
 
+variable "azure_monitor_metrics_enabled" {
+  description = "Run the Azure Monitor metrics add-on (ama-metrics) on the cluster. Pair with live/azure/poc/40-observability, which creates the workspace it sends to (ADR 0008)."
+  type        = bool
+  default     = true
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

@@ -1,0 +1,24 @@
+# ama-metrics reads this ConfigMap (fixed name, kube-system) and restarts itself on change.
+# Only the settings that differ from the add-on defaults are listed; everything else keeps
+# the default. Reference with all keys:
+# https://github.com/Azure/prometheus-collector/blob/main/otelcollector/configmaps/ama-metrics-settings-configmap.yaml
+#
+# pod-annotation-based-scraping: scrape pods annotated prometheus.io/scrape="true"
+#   (+ prometheus.io/port, prometheus.io/path) in the workload namespaces only. Platform
+#   namespaces are excluded on purpose: their metrics are plentiful and would dominate the
+#   ingestion bill.
+# minimal-ingestion-profile: keep the default allow-list of metrics for the built-in
+#   targets (ADR 0008 cost note). Stated explicitly so nobody flips it by accident.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ama-metrics-settings-configmap
+  namespace: kube-system
+data:
+  schema-version: v2
+  config-version: ver1
+  cluster-metrics: |-
+    pod-annotation-based-scraping: |-
+      podannotationnamespaceregex = "demo|sogeti|invent|i-and-d"
+    minimal-ingestion-profile: |-
+      enabled = true

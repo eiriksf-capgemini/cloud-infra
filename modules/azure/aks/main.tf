@@ -88,6 +88,16 @@ resource "azurerm_kubernetes_cluster" "this" {
     }
   }
 
+  # Managed Prometheus scraping agent (ADR 0008). Only the add-on switch lives here; the
+  # Azure Monitor workspace and data collection rule are a separate stack.
+  dynamic "monitor_metrics" {
+    for_each = var.azure_monitor_metrics_enabled ? [1] : []
+    content {
+      annotations_allowed = var.azure_monitor_metrics_annotations_allowed
+      labels_allowed      = var.azure_monitor_metrics_labels_allowed
+    }
+  }
+
   tags = var.tags
 
   depends_on = [azurerm_role_assignment.cluster_identity_subnet]

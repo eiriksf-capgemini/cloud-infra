@@ -1,0 +1,4 @@
+# All variables have POC defaults; override here if needed (file is gitignored).
+# location    = "swedencentral"
+# name_prefix = "cloudinfra-poc"
+# recording_rules_enabled = false   # debugging only; the portal dashboards go blank without them

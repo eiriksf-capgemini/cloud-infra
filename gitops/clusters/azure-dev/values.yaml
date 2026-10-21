@@ -81,6 +81,15 @@ apps:
         jsonPointers:
           - /spec/preserveUnknownFields
 
+  azure-monitor-metrics:
+    # Azure-specific (ADR 0008): settings ConfigMap for the AKS metrics add-on, read by the
+    # ama-metrics pods in kube-system. Enables prometheus.io/scrape annotation scraping for
+    # the workload namespaces. Harmless if the add-on is off.
+    enabled: true
+    namespace: kube-system
+    createNamespace: false
+    syncWave: "10"
+
   external-dns:
     # Needs an Azure DNS zone and a workload identity before it can do anything.
     enabled: false

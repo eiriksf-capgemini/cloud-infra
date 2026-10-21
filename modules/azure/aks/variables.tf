@@ -132,3 +132,21 @@ variable "api_server_authorized_ip_ranges" {
     error_message = "api_server_authorized_ip_ranges entries must be CIDRs (a single host is x.x.x.x/32)."
   }
 }
+
+variable "azure_monitor_metrics_enabled" {
+  description = "Enable the Azure Monitor metrics add-on (ama-metrics) that scrapes Prometheus metrics. Needs a destination from modules/azure/managed-prometheus; see ADR 0008. Costs ~300-500 MiB of node memory."
+  type        = bool
+  default     = false
+}
+
+variable "azure_monitor_metrics_annotations_allowed" {
+  description = "Comma-separated Kubernetes annotation keys exported as labels on kube_*_annotations metrics. null = none."
+  type        = string
+  default     = null
+}
+
+variable "azure_monitor_metrics_labels_allowed" {
+  description = "Comma-separated Kubernetes label keys exported as labels on kube_*_labels metrics. null = none."
+  type        = string
+  default     = null
+}
