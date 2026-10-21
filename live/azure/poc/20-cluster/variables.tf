@@ -56,9 +56,9 @@ variable "auto_stop_times" {
 }
 
 variable "automation_location" {
-  description = "Region for the auto-stop Automation account. Free Trial subscriptions are limited to eastus, eastus2, westus, northeurope, southeastasia, japanwest."
+  description = "Region for the auto-stop Automation account. Free Trial subscriptions are limited to eastus, eastus2, westus, northeurope, southeastasia, japanwest, and to ONE account per region; a deleted account blocks its region for 30 days (soft delete, portal-only restore). northeurope is blocked since the 2026-10-21 cluster recreate."
   type        = string
-  default     = "northeurope"
+  default     = "eastus2"
 }
 
 variable "timezone_utc_offset" {
