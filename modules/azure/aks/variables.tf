@@ -22,7 +22,7 @@ variable "kubernetes_version" {
 variable "system_node_pool" {
   description = "System node pool sizing. POC default is one small node that also runs workloads."
   type = object({
-    vm_size    = optional(string, "Standard_B2as_v2") # 2 vCPU / 8 GB burstable; 4 GB was not enough for Argo CD + Tekton + ingress (ADR 0004)
+    vm_size    = optional(string, "Standard_B2s_v2") # 2 vCPU / 8 GB burstable, Intel; the AMD twin B2as_v2 hit AllocationFailed in the region (ADR 0004)
     node_count = optional(number, 1)
     os_disk_gb = optional(number, 32) # P4 tier; AKS minimum is 30
   })

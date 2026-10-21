@@ -65,7 +65,7 @@ authenticating proxy (oauth2-proxy with Entra ID) sits in front of it.
    Root cause of the stall: the `platform` LimitRange gave the controller a 256Mi limit and
    it was OOM-killed mid-sync (12 restarts). The bootstrap module now sets resources for
    every Argo CD component (controller limit 1Gi).
-4. **Node capacity.** System node is `Standard_B2as_v2` (2 vCPU / 8 GB). Memory requests
+4. **Node capacity.** System node is `Standard_B2s_v2` (2 vCPU / 8 GB). Memory requests
    ~42%, **CPU requests ~90%**: the next few pods may fail to schedule. Tekton components
    request 100m each; Azure Monitor managed Prometheus (from the `40-observability` stack,
    PR #2) requests ~1.2 GB / ~300m. Options: trim requests via `TektonConfig` options, or a

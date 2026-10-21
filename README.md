@@ -87,7 +87,7 @@ Destroying the registry deletes every image in it.
 ## Tech stack
 
 - **Provisioning:** OpenTofu 1.13 (`hashicorp/azurerm` 5.x, `hashicorp/helm` 3.x), plain stacks + Makefile, remote state in Azure Storage
-- **Cloud:** Azure (Sweden Central): AKS 1.36 on one `Standard_B2as_v2` node, Azure CNI Overlay, Entra ID + Azure RBAC, ACR Basic, Azure Automation for auto-stop
+- **Cloud:** Azure (Sweden Central): AKS 1.36 on one `Standard_B2s_v2` node, Azure CNI Overlay, Entra ID + Azure RBAC, ACR Basic, Azure Automation for auto-stop
 - **GitOps:** Argo CD 3.5 (chart 10.10.5), app-of-apps Helm chart per cluster, ApplicationSet-discovered kustomize workloads
 - **Platform services:** ingress-nginx 4.15, cert-manager 1.21, Tekton Operator 0.77 (Pipelines, Triggers, read-only Dashboard)
 - **Local tooling:** kubectl 1.36, Helm 4.3, kubelogin, pinned in `.tool-versions`; `pre-commit` for `tofu fmt`/`validate`
@@ -138,7 +138,7 @@ when a cloud is added.
 
 See [`docs/adr/0004-cost-controls.md`](docs/adr/0004-cost-controls.md).
 
-- Region is **Sweden Central**, node size `Standard_B2as_v2`; ADR 0004 explains why.
+- Region is **Sweden Central**, node size `Standard_B2s_v2`; ADR 0004 explains why.
 - The cluster **auto-stops daily at 17:00 and again at 22:00 Europe/Oslo** (Azure
   Automation, free tier); the second stop catches evenings it was started for late work.
   Start it with `make aks-start`, check with `make aks-status`, stop early with `make aks-stop`.
