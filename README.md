@@ -1,12 +1,96 @@
 # cloud-infra
 
-Proof-of-concept infrastructure as code. Azure first, structured so AWS and GCP slot in
-later. Provisioning is done with **OpenTofu**; everything inside Kubernetes is reconciled by
-**Argo CD** from this repo.
+Provisions an AKS dev platform on Azure with OpenTofu and runs everything inside it from Git with Argo CD.
 
-Decisions and their reasoning live in [`docs/adr/`](docs/adr/). Operational summaries live in
-[`docs/runbooks/`](docs/runbooks/) (currently: [Tekton](docs/runbooks/tekton.md)).
-Dated change reports with what was built, verified and left open live in [`docs/reports/`](docs/reports/) (first: [2026-10-20](docs/reports/2026-10-20-change-report.md)).
+Proof of concept, Azure first, structured so AWS and GCP slot in later. Decisions live in
+[`docs/adr/`](docs/adr/), operational summaries in [`docs/runbooks/`](docs/runbooks/)
+(currently: [Tekton](docs/runbooks/tekton.md)), dated change reports in
+[`docs/reports/`](docs/reports/) (first: [2026-10-20](docs/reports/2026-10-20-change-report.md)).
+
+## Contents
+
+- [Quick start](#quick-start)
+- [Tech stack](#tech-stack)
+- [Layout](#layout)
+- [Multi-cloud approach](#multi-cloud-approach)
+- [Cost controls (dev environment)](#cost-controls-dev-environment)
+- [Container images](#container-images)
+- [Access control](#access-control)
+- [Day-to-day](#day-to-day)
+- [Status](#status)
+- [Contributing](#contributing)
+- [Team](#team)
+- [License](#license)
+
+## Quick start
+
+### Prerequisites
+
+```sh
+brew install opentofu azure-cli kubectl helm argocd
+brew install azure/kubelogin/kubelogin   # NOT the core "kubelogin" formula; that is a different tool
+tofu version                              # pinned in .tool-versions (1.13.x)
+```
+
+An **Azure subscription** with Owner (or Contributor + User Access Administrator) rights.
+On a fresh subscription, register the resource providers once; this saves minutes on the
+first apply:
+
+```sh
+for p in Microsoft.Compute Microsoft.Network Microsoft.Storage Microsoft.ManagedIdentity \
+         Microsoft.ContainerService Microsoft.ContainerRegistry Microsoft.Automation; do \
+  az provider register -n $p --wait; done
+```
+
+### First deployment
+
+The `azure/poc` environment is already deployed from this repo. These are the steps to
+recreate it, or to stand up a second environment with another `name_prefix`.
+
+```sh
+az login
+az account set --subscription <subscription-id>
+export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+
+# 1. state backend (local state for this stack only)
+make init plan apply STACK=live/azure/poc/00-tfstate
+make output STACK=live/azure/poc/00-tfstate      # paste backend_hcl into live/azure/poc/backend.hcl
+
+# 2. network
+make init plan apply STACK=live/azure/poc/10-network
+
+# 3. cluster (~10 min)
+make init plan apply STACK=live/azure/poc/20-cluster
+make output STACK=live/azure/poc/20-cluster      # run get_credentials_command
+kubectl get nodes
+
+# 4. container registry (~1 min; needs the cluster for the AcrPull grant, or set grant_aks_pull = false)
+make init plan apply STACK=live/azure/poc/25-registry
+make output STACK=live/azure/poc/25-registry     # login_server, login_command
+
+# 5. argo cd
+cp live/azure/poc/30-gitops/terraform.tfvars.example live/azure/poc/30-gitops/terraform.tfvars
+#    -> set gitops_repo_url to this repo's clone URL (push the repo first)
+make init plan apply STACK=live/azure/poc/30-gitops
+kubectl -n platform port-forward svc/argocd-server 8080:443
+#    admin password: make output STACK=live/azure/poc/30-gitops
+```
+
+Open https://localhost:8080. The `root` Application syncs `gitops/clusters/azure-dev`, which
+installs ingress-nginx and cert-manager and discovers every workload under
+`gitops/apps/*/*/overlays/dev`. From here on, change the cluster by committing to `gitops/`.
+Adding an application is described in `gitops/apps/README.md`.
+
+Tear down in reverse: `30-gitops` → `25-registry` → `20-cluster` → `10-network`; keep `00-tfstate`.
+Destroying the registry deletes every image in it.
+
+## Tech stack
+
+- **Provisioning:** OpenTofu 1.13 (`hashicorp/azurerm` 5.x, `hashicorp/helm` 3.x), plain stacks + Makefile, remote state in Azure Storage
+- **Cloud:** Azure (Sweden Central): AKS 1.36 on one `Standard_B2as_v2` node, Azure CNI Overlay, Entra ID + Azure RBAC, ACR Basic, Azure Automation for auto-stop
+- **GitOps:** Argo CD 3.5 (chart 10.10.5), app-of-apps Helm chart per cluster, ApplicationSet-discovered kustomize workloads
+- **Platform services:** ingress-nginx 4.15, cert-manager 1.21, Tekton Operator 0.77 (Pipelines, Triggers, read-only Dashboard)
+- **Local tooling:** kubectl 1.36, Helm 4.3, kubelogin, pinned in `.tool-versions`; `pre-commit` for `tofu fmt`/`validate`
 
 ## Layout
 
@@ -50,62 +134,6 @@ outputs** (`name`, `kubernetes_version`, `system_node_pool`, `user_node_pools`, 
 cloud-agnostic layer starts at the Kubernetes API: `modules/k8s/*` and `gitops/` do not change
 when a cloud is added.
 
-## Prerequisites
-
-```sh
-brew install opentofu azure-cli kubectl helm argocd kubelogin
-tofu version        # pinned in .tool-versions (1.13.x)
-```
-
-An **Azure subscription** with Owner (or Contributor + User Access Administrator) rights.
-On a fresh subscription, register the resource providers once; this saves minutes on the
-first apply:
-
-```sh
-for p in Microsoft.Compute Microsoft.Network Microsoft.Storage Microsoft.ManagedIdentity \
-         Microsoft.ContainerService Microsoft.ContainerRegistry Microsoft.Automation; do \
-  az provider register -n $p --wait; done
-```
-
-## First deployment (when a subscription is available)
-
-```sh
-az login
-az account set --subscription <subscription-id>
-export ARM_SUBSCRIPTION_ID=$(az account show --query id -o tsv)
-
-# 1. state backend (local state for this stack only)
-make init plan apply STACK=live/azure/poc/00-tfstate
-make output STACK=live/azure/poc/00-tfstate      # paste backend_hcl into live/azure/poc/backend.hcl
-
-# 2. network
-make init plan apply STACK=live/azure/poc/10-network
-
-# 3. cluster (~10 min)
-make init plan apply STACK=live/azure/poc/20-cluster
-make output STACK=live/azure/poc/20-cluster      # run get_credentials_command
-kubectl get nodes
-
-# 4. container registry (~1 min; needs the cluster for the AcrPull grant, or set grant_aks_pull = false)
-make init plan apply STACK=live/azure/poc/25-registry
-make output STACK=live/azure/poc/25-registry     # login_server, login_command
-
-# 5. argo cd
-cp live/azure/poc/30-gitops/terraform.tfvars.example live/azure/poc/30-gitops/terraform.tfvars
-#    -> set gitops_repo_url to this repo's clone URL (push the repo first)
-make init plan apply STACK=live/azure/poc/30-gitops
-kubectl -n platform port-forward svc/argocd-server 8080:443
-#    admin password: make output STACK=live/azure/poc/30-gitops
-```
-
-Open https://localhost:8080. The `root` Application syncs `gitops/clusters/azure-dev`, which
-installs ingress-nginx and cert-manager and discovers every workload under
-`gitops/apps/*/*/overlays/dev`. From here on, change the cluster by committing to `gitops/`.
-Adding an application is described in `gitops/apps/README.md`.
-
-Tear down in reverse: `30-gitops` → `25-registry` → `20-cluster` → `10-network`; keep `00-tfstate`.
-Destroying the registry deletes every image in it.
-
 ## Cost controls (dev environment)
 
 See [`docs/adr/0004-cost-controls.md`](docs/adr/0004-cost-controls.md).
@@ -137,7 +165,7 @@ az acr import --name acrmadbadgerbadger --source ghcr.io/stefanprodan/podinfo:6.
 az acr repository list --name acrmadbadgerbadger -o table
 ```
 
-Pin `image:` in `gitops/apps/<app>/overlays/<env>` to `acrmadbadgerbadger.azurecr.io/<repo>:<tag>`.
+Pin `image:` in `gitops/apps/<namespace>/<app>/overlays/<env>` to `acrmadbadgerbadger.azurecr.io/<repo>:<tag>`.
 
 ## Access control
 
@@ -184,13 +212,33 @@ Optional: `pre-commit install` to run fmt/validate on commit.
 
 ## Status
 
-- [x] Repo scaffold, modules, stacks, GitOps chart (validated with `tofu validate`, never applied)
-- [ ] First `tofu apply` on Azure (blocked on a subscription)
+- [x] Repo scaffold, modules, stacks, GitOps chart
+- [x] `azure/poc` deployed: state backend, network, AKS, Argo CD, platform services, Tekton (2026-10-20)
 - [x] Container registry (`modules/azure/acr`, `live/azure/poc/25-registry`)
+- [x] Access control: Norway + operator-egress allowlists on ingress, API server and state storage; dashboards via port-forward only (ADR 0009)
 - [ ] AWS: `modules/aws/{network,eks}`, `live/aws/poc/*`
 - [ ] GCP: `modules/gcp/{network,gke}`, `live/gcp/poc/*`
 - [ ] CI: GitHub Actions with OIDC to Azure running `plan` on PRs
-- [x] Access control: Norway + operator-egress allowlists on ingress, API server and state storage; dashboards via port-forward only (ADR 0009)
 - [ ] DNS zone, ClusterIssuers, external-dns
 - [ ] SSO (oauth2-proxy + Entra ID) in front of dashboards if they must be published
 - [ ] Consider Terragrunt if `live/` outgrows the Makefile + backend.hcl approach
+
+Open operational items are tracked per topic in [`docs/runbooks/`](docs/runbooks/).
+
+## Contributing
+
+1. Branch from `main` (`feat/<topic>`, `docs/<topic>`); never commit to `main` directly.
+2. Record a non-obvious decision as a new ADR in `docs/adr/` (next free number).
+3. Before pushing: `make fmt validate-all`, and `kubectl kustomize` / `helm template` for anything under `gitops/`.
+4. Open a PR; one reviewer; squash-merge. Argo CD applies `gitops/` changes within minutes of merge, so a merged PR is a deployment.
+5. Never commit `*.tfstate`, `*.tfvars` (except `*.example`) or credentials; they are gitignored on purpose.
+
+## Team
+
+- **Owner:** Eirik Sander-Fjeld ([@eiriksf-capgemini](https://github.com/eiriksf-capgemini))
+- **Contact:** [GitHub issues](https://github.com/eiriksf-capgemini/cloud-infra/issues)
+- **Azure:** subscription "Azure subscription 1" (Free Trial), tenant Capgemini
+
+## License
+
+[MIT](LICENSE)
