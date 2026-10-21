@@ -76,6 +76,12 @@ context if `kubectl config get-contexts` shows two.
 
 ## If something fails
 
+- `Only one account is allowed for your subscription per Region` on the Automation account:
+  the old one is soft-deleted and blocks that region for 30 days; the REST API has no restore.
+  Either recover it in the portal (Automation Accounts > Manage deleted accounts) and
+  `tofu import` it, or point `automation_location` at another allowed region (default now
+  `eastus2`) and re-run `make plan apply`.
+
 - `AllocationFailed` on create: regional capacity, not quota. Retry in a few minutes or pick
   another Bsv2 size (ADR 0004 has the price table). Do not switch family: Basv2 has failed
   twice here.

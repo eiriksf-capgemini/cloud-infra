@@ -19,7 +19,10 @@ control plane is free.
    account with a runbook that stops the cluster daily at 17:00 Europe/Oslo, and again at
    22:00 for evenings it was started for late work (one schedule per entry in `stop_times`). The account
    lives in North Europe because Free Trial subscriptions can only create Automation
-   accounts in six regions; it controls the cluster through ARM, so the region is irrelevant. Start is
+   accounts in six regions and to one account per region; a deleted account is soft-deleted for
+   30 days and keeps blocking its region (restore is portal-only), which is why the account moved
+   from northeurope to eastus2 at the 2026-10-21 cluster recreate. It controls the cluster through
+   ARM, so the region is irrelevant. Start is
    manual by default (`make aks-start`), with an optional weekday morning start schedule.
    A stopped cluster bills no node compute; nodes, workloads and Argo CD state survive.
 2. **One small burstable node, Free control plane, nothing optional enabled.** Region is
