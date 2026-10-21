@@ -65,7 +65,15 @@ Options compared on 2026-10-20 (Sweden Central retail prices, cluster on ~11 h/w
   high-cardinality app metrics, and check **Cost analysis > Azure Monitor** monthly.
 - Nothing to upgrade or back up; 18 months retention for free.
 - Two stacks must agree: `20-cluster` (add-on) and `40-observability` (destination). With
-  the add-on on and no destination, the agent pods run but ship nothing.
+  the add-on on and no destination, the agent pods run but ship nothing. Apply order on a
+  fresh environment is `20-cluster` → `40-observability` (the association needs the cluster
+  ID); the agent idles in between. Turning the add-on off in `20-cluster` leaves the
+  workspace and rules in place at no cost; destroy `40-observability` to remove them.
+- If the cluster is recreated, its resource ID changes and the association is orphaned:
+  `make apply STACK=live/azure/poc/40-observability` replaces it (the cluster is looked up
+  by name). Until then, metrics silently stop.
+- The 300–500 MiB the add-on needs comes out of the ~1.2 GiB the node still has free. If
+  pods start pending, the fallback order is: drop Tekton, then move to `Standard_B2as_v2`.
 - Azure-only. The GitOps layer carries one Azure-specific ConfigMap under `gitops/platform`,
   flagged as such in the cluster chart values.
 - The portal Grafana is preview and lacks alerts, reports, library panels and app plugins.

@@ -1,16 +1,19 @@
 # Default recording rules for the community Kubernetes / node-exporter dashboards.
-# Copied from Microsoft's reference onboarding template
-# (github.com/Azure/prometheus-collector, AddonTerraformTemplate/main.tf): the Linux
-# groups only. Portal / CLI onboarding creates these automatically; OpenTofu must.
-# Do not hand-edit the expressions; re-sync from upstream instead.
+# Copied from Microsoft's reference onboarding template, Linux groups only:
+#   github.com/Azure/prometheus-collector, AddonTerraformTemplate/main.tf
+#   commit 71a784f49d633b9f182a50c878c6dd48c75fd58d (2026-08-24)
+# Portal / CLI onboarding creates these automatically; OpenTofu must.
+# Do not hand-edit the expressions; re-sync from upstream and bump the commit above.
 
 resource "azurerm_monitor_alert_prometheus_rule_group" "node_recording_rules_rule_group" {
+  count = var.recording_rules_enabled ? 1 : 0
+
   name                = "NodeRecordingRulesRuleGroup-${var.cluster_name}"
   location            = var.location
   resource_group_name = var.resource_group_name
   cluster_name        = var.cluster_name
   description         = "Node Recording Rules Rule Group"
-  rule_group_enabled  = var.recording_rules_enabled
+  rule_group_enabled  = true
   interval            = "PT1M"
   scopes              = [azurerm_monitor_workspace.this.id, var.cluster_id]
 
@@ -95,12 +98,14 @@ EOF
 }
 
 resource "azurerm_monitor_alert_prometheus_rule_group" "kubernetes_recording_rules_rule_group" {
+  count = var.recording_rules_enabled ? 1 : 0
+
   name                = "KubernetesRecordingRulesRuleGroup-${var.cluster_name}"
   location            = var.location
   resource_group_name = var.resource_group_name
   cluster_name        = var.cluster_name
   description         = "Kubernetes Recording Rules Rule Group"
-  rule_group_enabled  = var.recording_rules_enabled
+  rule_group_enabled  = true
   interval            = "PT1M"
   scopes              = [azurerm_monitor_workspace.this.id, var.cluster_id]
 
@@ -252,12 +257,14 @@ EOF
 }
 
 resource "azurerm_monitor_alert_prometheus_rule_group" "ux_recording_rules_rule_group" {
+  count = var.recording_rules_enabled ? 1 : 0
+
   name                = "UXRecordingRulesRuleGroup-${var.cluster_name}"
   location            = var.location
   resource_group_name = var.resource_group_name
   cluster_name        = var.cluster_name
   description         = "UX recording rules for Linux"
-  rule_group_enabled  = var.recording_rules_enabled
+  rule_group_enabled  = true
   interval            = "PT1M"
   scopes              = [azurerm_monitor_workspace.this.id, var.cluster_id]
 

@@ -1,4 +1,7 @@
 # ama-metrics reads this ConfigMap (fixed name, kube-system) and restarts itself on change.
+# Schema v2: settings are nested under `cluster-metrics` / `controlplane-metrics` as
+# TOML-style block scalars, exactly like the upstream template (commit 2b58906, 2026-05-06).
+# The flat v1 layout (top-level keys) is the old schema; do not mix the two.
 # Only the settings that differ from the add-on defaults are listed; everything else keeps
 # the default. Reference with all keys:
 # https://github.com/Azure/prometheus-collector/blob/main/otelcollector/configmaps/ama-metrics-settings-configmap.yaml
