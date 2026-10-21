@@ -52,3 +52,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "public_ips" {
+  description = "Names of Standard static public IPs to create as pip-<prefix>-<name>. They outlive the cluster, so LoadBalancer Services pinned to them (ingress-nginx) keep their address across a cluster recreate (ADR 0010). ~$3.65/month each, billed whether or not the cluster runs; Free Trial quota is 3 public IPs per region including the cluster egress IP."
+  type        = list(string)
+  default     = []
+}

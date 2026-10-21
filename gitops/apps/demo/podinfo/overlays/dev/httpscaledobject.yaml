@@ -1,0 +1,39 @@
+# Scale to zero (ADR 0010): ingress-nginx sends podinfo's host to the KEDA HTTP interceptor
+# (ExternalName below); the interceptor holds the request, KEDA scales the Deployment from
+# 0, and routes to the Service once a pod is ready. Idle for scaledownPeriod -> back to 0.
+apiVersion: http.keda.sh/v1alpha1
+kind: HTTPScaledObject
+metadata:
+  name: podinfo
+spec:
+  hosts:
+    - podinfo.20.91.237.179.nip.io
+  scaleTargetRef:
+    name: podinfo
+    kind: Deployment
+    apiVersion: apps/v1
+    service: podinfo
+    port: 80
+  replicas:
+    min: 0
+    max: 2
+  scaledownPeriod: 300
+  scalingMetric:
+    requestRate:
+      granularity: 1s
+      targetValue: 20
+      window: 1m
+---
+# Same-namespace alias for the interceptor proxy, because an Ingress can only reference a
+# Service in its own namespace.
+apiVersion: v1
+kind: Service
+metadata:
+  name: keda-http-interceptor
+spec:
+  type: ExternalName
+  externalName: keda-add-ons-http-interceptor-proxy.keda.svc.cluster.local
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

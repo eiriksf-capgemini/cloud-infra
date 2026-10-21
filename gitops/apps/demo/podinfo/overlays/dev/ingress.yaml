@@ -1,19 +1,24 @@
-# Dev-only ingress using a nip.io hostname on the ingress-nginx public IP, so the app is
-# reachable without owning a DNS zone. Replace with a real host + cert-manager TLS later.
+# Dev-only ingress using a nip.io hostname on the ingress-nginx static public IP, so the app
+# is reachable without owning a DNS zone. Replace with a real host + cert-manager TLS later.
+# The backend is the KEDA HTTP interceptor (scale to zero, ADR 0010), not the app Service;
+# the interceptor matches on the Host header and forwards to the podinfo Service.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: podinfo
+  annotations:
+    # The interceptor needs the original Host to pick the HTTPScaledObject.
+    nginx.ingress.kubernetes.io/upstream-vhost: podinfo.20.91.237.179.nip.io
 spec:
   ingressClassName: nginx
   rules:
-    - host: podinfo.57.174.156.100.nip.io
+    - host: podinfo.20.91.237.179.nip.io
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: podinfo
+                name: keda-http-interceptor
                 port:
-                  name: http
+                  number: 8080

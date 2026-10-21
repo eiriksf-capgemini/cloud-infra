@@ -1,0 +1,26 @@
+# The reference install pastes the agent CA into this object; the CRD also accepts a
+# secretKeyRef, which keeps it declarative. cluster-agent-tls is issued by cert-manager when
+# the data-plane chart syncs (self-signed issuer), so no secret material lives in Git.
+apiVersion: openchoreo.dev/v1alpha1
+kind: ClusterDataPlane
+metadata:
+  name: default
+spec:
+  planeID: default
+  clusterAgent:
+    clientCA:
+      secretKeyRef:
+        name: cluster-agent-tls
+        namespace: openchoreo-data-plane
+        key: ca.crt
+  secretStoreRef:
+    name: default
+  gateway:
+    ingress:
+      external:
+        name: gateway-default
+        namespace: openchoreo-data-plane
+        http:
+          host: openchoreoapis.20.91.237.179.nip.io
+          listenerName: http
+          port: 80

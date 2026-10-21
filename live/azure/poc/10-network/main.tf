@@ -30,4 +30,6 @@ module "network" {
 
   ingress_allowed_ports   = var.ingress_allowed_ports
   ingress_allowed_sources = var.ingress_allow_internet ? ["Internet"] : local.ingress_sources
+
+  public_ips = var.public_ips
 }

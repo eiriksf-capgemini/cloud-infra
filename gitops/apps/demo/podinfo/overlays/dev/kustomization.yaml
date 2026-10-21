@@ -8,5 +8,6 @@ labels:
 resources:
   - ../../base
   - ingress.yaml
+  - httpscaledobject.yaml
 patches:
   - path: patch-env.yaml

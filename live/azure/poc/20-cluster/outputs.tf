@@ -35,3 +35,8 @@ output "api_server_allowed_sources" {
   description = "CIDRs that may reach the API server, or 'any'."
   value       = length(local.api_server_sources) == 0 ? ["any"] : local.api_server_sources
 }
+
+output "static_public_ips" {
+  description = "Static public IPs the cluster may attach to LoadBalancer Services (from 10-network)."
+  value       = { for k, p in data.azurerm_public_ip.static : k => p.ip_address }
+}

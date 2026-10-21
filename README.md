@@ -17,6 +17,7 @@ Proof of concept, Azure first, structured so AWS and GCP slot in later. Decision
 - [Container images](#container-images)
 - [Access control](#access-control)
 - [Metrics and dashboards](#metrics-and-dashboards)
+- [OpenChoreo](#openchoreo)
 - [Day-to-day](#day-to-day)
 - [Status](#status)
 - [Contributing](#contributing)
@@ -94,16 +95,17 @@ Destroying the registry deletes every image in it.
 ## Tech stack
 
 - **Provisioning:** OpenTofu 1.13 (`hashicorp/azurerm` 5.x, `hashicorp/helm` 3.x), plain stacks + Makefile, remote state in Azure Storage
-- **Cloud:** Azure (Sweden Central): AKS 1.36 on one `Standard_B2s_v2` node, Azure CNI Overlay, Entra ID + Azure RBAC, ACR Basic, Azure Monitor managed Prometheus (portal Grafana dashboards), Azure Automation for auto-stop
+- **Cloud:** Azure (Sweden Central): AKS 1.36 on one `Standard_B4s_v2` node, Azure CNI Overlay, Entra ID + Azure RBAC, ACR Basic, Azure Monitor managed Prometheus (portal Grafana dashboards), Azure Automation for auto-stop
 - **GitOps:** Argo CD 3.5 (chart 10.10.5), app-of-apps Helm chart per cluster, ApplicationSet-discovered kustomize workloads
-- **Platform services:** ingress-nginx 4.15, cert-manager 1.21, Tekton Operator 0.77 (Pipelines, Triggers, read-only Dashboard)
+- **Platform services:** ingress-nginx 4.15, cert-manager 1.21, Tekton Operator 0.77 (Pipelines, Triggers, read-only Dashboard), KEDA 2.21 + HTTP add-on (scale to zero)
+- **Developer platform:** OpenChoreo 1.3.1 (control + data plane, ThunderID, kgateway, External Secrets, OpenBao) behind the same ingress (ADR 0010)
 - **Local tooling:** kubectl 1.36, Helm 4.3, kubelogin, pinned in `.tool-versions`; `pre-commit` for `tofu fmt`/`validate`
 
 ## Layout
 
 ```
 modules/            reusable building blocks
-  azure/network     RG, VNet, AKS subnet, NSG
+  azure/network     RG, VNet, AKS subnet, NSG, static public IP for ingress (ADR 0010)
   azure/aks         AKS cluster implementing the common cluster interface (ADR 0002)
   azure/aks-autostop  Azure Automation schedules that stop the cluster daily (ADR 0004)
   azure/acr         Container registry + AcrPull/AcrPush role assignments (ADR 0006)
@@ -128,7 +130,8 @@ gitops/             what Argo CD reconciles INTO the cluster
   apps/<namespace>/<app>/ workloads: kustomize base + overlays/{dev,test,prod}; every namespace
                           folder has a `namespace` app (Namespace, LimitRange, quotas); no auto-create
   apps/platform/          Argo CD (bootstrapped) + Tekton (Pipelines, Triggers, read-only Dashboard)
-  platform/<service>      Helm values (ingress-nginx, cert-manager, external-dns) or kustomize dir (tekton-operator)
+  platform/<service>      Helm values (ingress-nginx, cert-manager, keda, openchoreo-*, ...) or kustomize dirs
+                          (tekton-operator, gateway-api-crds, openchoreo-{gateway-params,secrets,gateway-ca,ingress,config})
   bootstrap/root-app.yaml manual fallback for the root Application
 ```
 
@@ -147,7 +150,9 @@ when a cloud is added.
 
 See [`docs/adr/0004-cost-controls.md`](docs/adr/0004-cost-controls.md).
 
-- Region is **Sweden Central**, node size `Standard_B2s_v2`; ADR 0004 explains why.
+- Region is **Sweden Central**, node size `Standard_B4s_v2` (~$42/month at 11 h × 22 d); ADR 0004
+  and ADR 0010 explain why. The Free Trial quota (4 vCPU, 3 public IPs per region) is now fully
+  used: a node size change means recreating the cluster (`docs/runbooks/recreate-cluster.md`).
 - The cluster **auto-stops daily at 17:00 and again at 22:00 Europe/Oslo** (Azure
   Automation, free tier); the second stop catches evenings it was started for late work.
   Start it with `make aks-start`, check with `make aks-status`, stop early with `make aks-stop`.
@@ -160,6 +165,8 @@ See [`docs/adr/0004-cost-controls.md`](docs/adr/0004-cost-controls.md).
 - Unused for days? `make destroy STACK=live/azure/poc/20-cluster`. Network and state stay.
 - The container registry (`25-registry`, Basic SKU) is a flat ~$5/month and cannot be
   stopped. Destroy it too if the environment is idle for weeks; images are the only state.
+- HTTP demo workloads **scale to zero** through KEDA's HTTP add-on (podinfo is the reference, ADR
+  0010); platform controllers cannot, so the nightly stop stays the main saver.
 - Managed Prometheus (`40-observability`) bills only samples ingested (~$0.11 per 10 M in
   Sweden Central), roughly $2–6/month for this cluster running 24/7 and nothing while it is
   stopped. The portal Grafana dashboards are free. See ADR 0008.
@@ -210,6 +217,9 @@ See [`docs/adr/0009-network-access-and-authentication.md`](docs/adr/0009-network
   next apply does not remove it.
 - Not restricted (Entra ID only): ACR (Basic SKU has no firewall), Azure Monitor workspace,
   Automation account.
+- **OpenChoreo** (portal, API, Thunder, workload gateway) shares the ingress IP and allowlist. It
+  ships the reference install's default users and passwords (ADR 0010); change them before
+  showing it to anyone outside the POC.
 
 ## Metrics and dashboards
 
@@ -231,6 +241,30 @@ scraped too; the allow-list of namespaces is the `ama-metrics-settings-configmap
 `gitops/platform/azure-monitor-metrics/`. Query anything with PromQL in **Monitor > Metrics
 explorer with PromQL**, or point any Grafana at the `query_endpoint` output with Entra ID auth.
 
+## OpenChoreo
+
+[OpenChoreo](https://openchoreo.dev) 1.3.1 runs on the cluster as the developer platform
+(ADR 0010): control plane, data plane and the ThunderID identity provider, with kgateway,
+External Secrets, OpenBao (dev mode) and the Gateway API CRDs as prerequisites. All of it is
+Argo CD Applications under `gitops/platform/`, fronted by ingress-nginx on the static IP.
+
+| What | URL | Login |
+|---|---|---|
+| Portal (Backstage) | http://console.openchoreo.20.91.237.179.nip.io | `admin@openchoreo.dev` / `Admin@123` (reference defaults; also `developer@`, `platform-engineer@`, `sre@`) |
+| API | http://api.openchoreo.20.91.237.179.nip.io | OIDC via Thunder |
+| ThunderID | http://thunder.openchoreo.20.91.237.179.nip.io | same users |
+| Deployed components | http://`<component>-<env>`.openchoreoapis.20.91.237.179.nip.io | per component |
+
+```sh
+kubectl get clusterdataplane,environments,projects -A                    # registered plane + sample resources
+kubectl -n openchoreo-control-plane get pods                              # api, controller, backstage, gateways
+kubectl -n openchoreo-control-plane get certificate,job                   # CA issued; CA-sync hook Succeeded
+```
+
+The getting-started sample (environments dev/staging/prod, a pipeline, the default project and
+component types) is installed from upstream, pinned to v1.3.1 (`gitops/platform/openchoreo-config`).
+Workflow and observability planes are not installed; see ADR 0010.
+
 ## Day-to-day
 
 ```sh
@@ -249,6 +283,7 @@ Optional: `pre-commit install` to run fmt/validate on commit.
 - [x] Container registry (`modules/azure/acr`, `live/azure/poc/25-registry`)
 - [x] Access control: Norway + operator-egress allowlists on ingress, API server and state storage; dashboards via port-forward only (ADR 0009)
 - [x] Metrics: Azure Monitor managed Prometheus + portal Grafana dashboards (`40-observability`)
+- [x] OpenChoreo 1.3.1 (control + data plane) behind the static ingress IP; KEDA scale-to-zero for HTTP demos (ADR 0010)
 - [ ] AWS: `modules/aws/{network,eks}`, `live/aws/poc/*`
 - [ ] GCP: `modules/gcp/{network,gke}`, `live/gcp/poc/*`
 - [ ] CI: GitHub Actions with OIDC to Azure running `plan` on PRs

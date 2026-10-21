@@ -1,0 +1,7 @@
+# Glue between OpenBao, External Secrets and the OpenChoreo control plane (ADR 0010):
+# the ClusterSecretStore every plane uses, and the Backstage secret it needs at start.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - clustersecretstore.yaml
+  - externalsecret-backstage.yaml

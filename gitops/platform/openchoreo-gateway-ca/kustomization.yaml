@@ -1,0 +1,10 @@
+# Copies the cluster-gateway CA (a cert-manager Secret the control-plane chart issues at
+# install) into the ConfigMaps the planes' agents verify against (ADR 0010). The OpenChoreo
+# install script does this by hand; here it is an Argo CD Sync hook that re-runs on every
+# sync of this app. The control-plane chart ships a placeholder ConfigMap of the same name,
+# so that Application ignores /data/ca.crt (see gitops/clusters/azure-dev/values.yaml).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - rbac.yaml
+  - job.yaml

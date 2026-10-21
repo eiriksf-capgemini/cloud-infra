@@ -90,6 +90,150 @@ apps:
     createNamespace: false
     syncWave: "10"
 
+  # ---------------------------------------------------------------------------------------
+  # OpenChoreo (ADR 0010) and what it needs, in sync-wave order. OCI chart repos are given
+  # without the oci:// scheme (Argo CD convention). Namespaces are upstream's: the charts
+  # hard-code them in hundreds of places, so they cannot move into `platform`.
+  # ---------------------------------------------------------------------------------------
+  gateway-api-crds:
+    # Kubernetes Gateway API standard CRDs, pinned (kustomize, remote release YAML).
+    enabled: true
+    namespace: kube-system
+    createNamespace: false
+    serverSideApply: true
+    syncWave: "5"
+    ignoreDifferences:
+      - group: apiextensions.k8s.io
+        kind: CustomResourceDefinition
+        jsonPointers:
+          - /spec/preserveUnknownFields
+
+  external-secrets:
+    enabled: true
+    namespace: external-secrets
+    chartRepoURL: ghcr.io/external-secrets/charts
+    chart: external-secrets
+    chartVersion: 2.0.1
+    serverSideApply: true
+    syncWave: "10"
+
+  openbao:
+    # Dev mode, in-memory; see gitops/platform/openbao/values.yaml.
+    enabled: true
+    namespace: openbao
+    chartRepoURL: ghcr.io/openbao/charts
+    chart: openbao
+    chartVersion: 0.25.6
+    syncWave: "10"
+
+  keda:
+    enabled: true
+    namespace: keda
+    chartRepoURL: https://kedacore.github.io/charts
+    chart: keda
+    chartVersion: 2.21.0
+    serverSideApply: true
+    syncWave: "10"
+
+  keda-add-ons-http:
+    enabled: true
+    namespace: keda
+    chartRepoURL: https://kedacore.github.io/charts
+    chart: keda-add-ons-http
+    chartVersion: 0.16.0
+    syncWave: "12"
+
+  kgateway-crds:
+    enabled: true
+    namespace: openchoreo-control-plane
+    chartRepoURL: cr.kgateway.dev/kgateway-dev/charts
+    chart: kgateway-crds
+    chartVersion: v2.3.1
+    serverSideApply: true
+    syncWave: "12"
+
+  kgateway:
+    enabled: true
+    namespace: openchoreo-control-plane
+    chartRepoURL: cr.kgateway.dev/kgateway-dev/charts
+    chart: kgateway
+    chartVersion: v2.3.1
+    syncWave: "15"
+
+  openchoreo-gateway-params:
+    # Both OpenChoreo namespaces + the GatewayParameters that make the proxies ClusterIP.
+    enabled: true
+    namespace: openchoreo-control-plane
+    createNamespace: false
+    syncWave: "16"
+
+  openchoreo-secrets:
+    # ClusterSecretStore (OpenBao) + the Backstage ExternalSecret.
+    enabled: true
+    namespace: openbao
+    createNamespace: false
+    syncWave: "18"
+
+  thunder:
+    # ThunderID identity provider; HTTPRoute attaches to the control-plane Gateway.
+    enabled: true
+    namespace: thunder
+    chartRepoURL: ghcr.io/thunder-id/helm-charts
+    chart: thunderid
+    chartVersion: 1.0.1
+    syncWave: "20"
+
+  openchoreo-control-plane:
+    enabled: true
+    namespace: openchoreo-control-plane
+    createNamespace: false
+    chartRepoURL: ghcr.io/openchoreo/helm-charts
+    chart: openchoreo-control-plane
+    chartVersion: 1.3.1
+    serverSideApply: true
+    syncWave: "25"
+    ignoreDifferences:
+      # The chart ships this ConfigMap as a placeholder; gitops/platform/openchoreo-gateway-ca
+      # fills in the real CA. Without this, self-heal would put the placeholder back.
+      - group: ""
+        kind: ConfigMap
+        name: cluster-gateway-ca
+        namespace: openchoreo-control-plane
+        jsonPointers:
+          - /data/ca.crt
+
+  openchoreo-gateway-ca:
+    # Sync hook Job: cluster-gateway CA Secret -> ConfigMaps in both plane namespaces.
+    enabled: true
+    namespace: openchoreo-control-plane
+    createNamespace: false
+    syncWave: "28"
+
+  openchoreo-data-plane:
+    enabled: true
+    namespace: openchoreo-data-plane
+    createNamespace: false
+    chartRepoURL: ghcr.io/openchoreo/helm-charts
+    chart: openchoreo-data-plane
+    chartVersion: 1.3.1
+    syncWave: "30"
+
+  openchoreo-ingress:
+    # ingress-nginx -> the two ClusterIP kgateway proxies (one public IP for the whole POC).
+    enabled: true
+    namespace: openchoreo-control-plane
+    createNamespace: false
+    syncWave: "30"
+
+  openchoreo-config:
+    # ClusterDataPlane registration + upstream getting-started sample (environments, pipeline,
+    # project, component types) in the `default` namespace.
+    enabled: true
+    namespace: default
+    createNamespace: false
+    serverSideApply: true
+    syncWave: "35"
+
   external-dns:
     # Needs an Azure DNS zone and a workload identity before it can do anything.
     enabled: false

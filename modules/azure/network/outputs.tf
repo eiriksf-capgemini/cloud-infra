@@ -27,3 +27,14 @@ output "aks_subnet_name" {
   description = "Name of the subnet reserved for AKS nodes."
   value       = azurerm_subnet.aks.name
 }
+
+output "public_ips" {
+  description = "Static public IPs by short name: { name, id, ip_address }."
+  value = {
+    for k, pip in azurerm_public_ip.this : k => {
+      name       = pip.name
+      id         = pip.id
+      ip_address = pip.ip_address
+    }
+  }
+}

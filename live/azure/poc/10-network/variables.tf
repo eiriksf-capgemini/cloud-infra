@@ -52,3 +52,9 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+
+variable "public_ips" {
+  description = "Static public IPs (pip-<prefix>-<name>) for LoadBalancer Services. Only ingress-nginx: the Free Trial allows 3 public IPs per region and the cluster's egress IP takes one, so every HTTP entry point (OpenChoreo gateways included) goes through ingress-nginx (ADR 0010). Removing a name deletes the IP and the nip.io hostnames built on it."
+  type        = list(string)
+  default     = ["ingress"]
+}

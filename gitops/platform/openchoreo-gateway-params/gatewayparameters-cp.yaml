@@ -1,0 +1,18 @@
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: GatewayParameters
+metadata:
+  name: openchoreo-cp
+  namespace: openchoreo-control-plane
+spec:
+  kube:
+    service:
+      type: ClusterIP
+    deployment:
+      replicas: 1
+    envoyContainer:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          memory: 512Mi

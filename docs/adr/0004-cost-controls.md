@@ -38,7 +38,12 @@ control plane is free.
    Azure's suggested `D2as_v5`/`D2s_v5` (non-burstable, 18–31% more) because the POC's load
    is bursty and the price gap is smaller. The AMD `Basv2` family has now failed allocation
    twice in this region (`B2als_v2` on 2026-10-20, `B2as_v2` on 2026-10-21). A 4-vCPU size
-   would consume the whole regional quota and leave no room for upgrade surge nodes. `Standard_B2pls_v2` (arm64) is
+   would consume the whole regional quota and leave no room for upgrade surge nodes.
+   On 2026-10-21 that trade was made anyway for OpenChoreo (ADR 0010): the default is now
+   **`Standard_B4s_v2`** (4 vCPU / 16 GB, $0.173/h, ~$42/month with auto-stop), the quota is
+   saturated, upgrades need `--max-surge 0 --max-unavailable 1` out of band, and a size change
+   means recreating the cluster (`docs/runbooks/recreate-cluster.md`). The Free Trial also
+   caps public IPs at 3 per region; one is the cluster egress, one the static ingress IP. `Standard_B2pls_v2` (arm64) is
    $0.034/h and was skipped only to avoid arm64 image surprises. With auto-stop the node
    costs roughly $9/month; the load balancer and public IP add a similar amount. No Log Analytics,
    no Defender, no Azure Policy add-on in the POC cluster. Enable them deliberately later.

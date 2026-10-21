@@ -61,6 +61,14 @@ data "azurerm_public_ip" "cluster_egress" {
   resource_group_name = element(split("/", each.value), 4)
 }
 
+# Static public IPs from 10-network (ADR 0010), by naming convention.
+data "azurerm_public_ip" "static" {
+  for_each = toset(var.public_ip_names)
+
+  name                = "pip-${var.name_prefix}-${each.value}"
+  resource_group_name = data.azurerm_resource_group.network.name
+}
+
 module "aks" {
   source = "../../../../modules/azure/aks"
 
@@ -78,6 +86,7 @@ module "aks" {
   admin_group_object_ids = var.admin_group_object_ids
 
   api_server_authorized_ip_ranges = local.api_server_sources
+  public_ip_ids                   = [for p in data.azurerm_public_ip.static : p.id]
 
   # Nothing in the POC uses Entra Workload ID yet (external-dns is disabled, Tekton pushes
   # are a to-do); its webhook alone would request 200m of the node's 1900m CPU (ADR 0004).

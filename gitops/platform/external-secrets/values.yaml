@@ -1,0 +1,27 @@
+# External Secrets Operator (ADR 0010): OpenChoreo reads its platform secrets from OpenBao
+# through a ClusterSecretStore (gitops/platform/openchoreo-secrets). Requests trimmed for
+# the single node; upstream sets none.
+installCRDs: true
+replicaCount: 1
+resources:
+  requests:
+    cpu: 20m
+    memory: 64Mi
+  limits:
+    memory: 256Mi
+webhook:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi
+certController:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 128Mi

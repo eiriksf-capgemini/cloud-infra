@@ -22,7 +22,7 @@ variable "kubernetes_version" {
 variable "system_node_pool" {
   description = "System node pool sizing. POC default is one small node that also runs workloads."
   type = object({
-    vm_size    = optional(string, "Standard_B2s_v2") # 2 vCPU / 8 GB burstable, Intel; the AMD twin B2as_v2 hit AllocationFailed in the region (ADR 0004)
+    vm_size    = optional(string, "Standard_B4s_v2") # 4 vCPU / 16 GB burstable, Intel; 2 vCPU was full before OpenChoreo (ADR 0004, 0010)
     node_count = optional(number, 1)
     os_disk_gb = optional(number, 32) # P4 tier; AKS minimum is 30
   })
@@ -109,6 +109,12 @@ variable "dns_service_ip" {
   description = "Cluster DNS IP; must be inside service_cidr."
   type        = string
   default     = "10.0.0.10"
+}
+
+variable "public_ip_ids" {
+  description = "IDs of pre-created static public IPs the cluster identity may attach to LoadBalancer Services (Network Contributor on each). Pin a Service with service.beta.kubernetes.io/azure-pip-name + azure-load-balancer-resource-group."
+  type        = list(string)
+  default     = []
 }
 
 variable "workload_identity_enabled" {
