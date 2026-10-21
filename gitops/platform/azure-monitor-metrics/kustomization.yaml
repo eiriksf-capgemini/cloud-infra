@@ -1,0 +1,7 @@
+# Settings for the AKS Azure Monitor metrics add-on (ama-metrics), ADR 0008.
+# Azure-specific: only enabled in cluster charts that run on AKS.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: kube-system
+resources:
+  - configmap.yaml

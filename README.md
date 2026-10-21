@@ -16,6 +16,7 @@ Proof of concept, Azure first, structured so AWS and GCP slot in later. Decision
 - [Cost controls (dev environment)](#cost-controls-dev-environment)
 - [Container images](#container-images)
 - [Access control](#access-control)
+- [Metrics and dashboards](#metrics-and-dashboards)
 - [Day-to-day](#day-to-day)
 - [Status](#status)
 - [Contributing](#contributing)
@@ -38,7 +39,8 @@ first apply:
 
 ```sh
 for p in Microsoft.Compute Microsoft.Network Microsoft.Storage Microsoft.ManagedIdentity \
-         Microsoft.ContainerService Microsoft.ContainerRegistry Microsoft.Automation; do \
+         Microsoft.ContainerService Microsoft.ContainerRegistry Microsoft.Automation \
+         Microsoft.Monitor Microsoft.Insights Microsoft.AlertsManagement; do \
   az provider register -n $p --wait; done
 ```
 
@@ -74,6 +76,11 @@ cp live/azure/poc/30-gitops/terraform.tfvars.example live/azure/poc/30-gitops/te
 make init plan apply STACK=live/azure/poc/30-gitops
 kubectl -n platform port-forward svc/argocd-server 8080:443
 #    admin password: make output STACK=live/azure/poc/30-gitops
+
+# 6. metrics (~2 min): Azure Monitor workspace + collection rule; the cluster's ama-metrics add-on
+#    is on by default in 20-cluster and starts shipping as soon as this exists
+make init plan apply STACK=live/azure/poc/40-observability
+#    dashboards: portal > Monitor > Dashboards with Grafana (nothing to install)
 ```
 
 Open https://localhost:8080. The `root` Application syncs `gitops/clusters/azure-dev`, which
@@ -81,13 +88,13 @@ installs ingress-nginx and cert-manager and discovers every workload under
 `gitops/apps/*/*/overlays/dev`. From here on, change the cluster by committing to `gitops/`.
 Adding an application is described in `gitops/apps/README.md`.
 
-Tear down in reverse: `30-gitops` → `25-registry` → `20-cluster` → `10-network`; keep `00-tfstate`.
+Tear down in reverse: `40-observability` → `30-gitops` → `25-registry` → `20-cluster` → `10-network`; keep `00-tfstate`.
 Destroying the registry deletes every image in it.
 
 ## Tech stack
 
 - **Provisioning:** OpenTofu 1.13 (`hashicorp/azurerm` 5.x, `hashicorp/helm` 3.x), plain stacks + Makefile, remote state in Azure Storage
-- **Cloud:** Azure (Sweden Central): AKS 1.36 on one `Standard_B2s_v2` node, Azure CNI Overlay, Entra ID + Azure RBAC, ACR Basic, Azure Automation for auto-stop
+- **Cloud:** Azure (Sweden Central): AKS 1.36 on one `Standard_B2s_v2` node, Azure CNI Overlay, Entra ID + Azure RBAC, ACR Basic, Azure Monitor managed Prometheus (portal Grafana dashboards), Azure Automation for auto-stop
 - **GitOps:** Argo CD 3.5 (chart 10.10.5), app-of-apps Helm chart per cluster, ApplicationSet-discovered kustomize workloads
 - **Platform services:** ingress-nginx 4.15, cert-manager 1.21, Tekton Operator 0.77 (Pipelines, Triggers, read-only Dashboard)
 - **Local tooling:** kubectl 1.36, Helm 4.3, kubelogin, pinned in `.tool-versions`; `pre-commit` for `tofu fmt`/`validate`
@@ -100,6 +107,7 @@ modules/            reusable building blocks
   azure/aks         AKS cluster implementing the common cluster interface (ADR 0002)
   azure/aks-autostop  Azure Automation schedules that stop the cluster daily (ADR 0004)
   azure/acr         Container registry + AcrPull/AcrPush role assignments (ADR 0006)
+  azure/managed-prometheus  Azure Monitor workspace + DCR/DCE + default recording rules (ADR 0008)
   aws/, gcp/        placeholders: same interface, not implemented yet
   k8s/argocd-bootstrap  Argo CD + root app-of-apps; cloud-agnostic (helm provider only)
 
@@ -111,6 +119,7 @@ live/<cloud>/<env>/ one directory per stack, each with its own state
   azure/poc/20-cluster    uses modules/azure/aks
   azure/poc/25-registry   uses modules/azure/acr; grants AcrPull to the cluster's kubelet identity
   azure/poc/30-gitops     uses modules/k8s/argocd-bootstrap
+  azure/poc/40-observability  uses modules/azure/managed-prometheus; cluster add-on is switched on in 20-cluster
 
 scripts/            helpers (country-prefixes.py regenerates the country allowlist; gh-app-token.mjs mints the agents' GitHub App token)
 
@@ -151,6 +160,9 @@ See [`docs/adr/0004-cost-controls.md`](docs/adr/0004-cost-controls.md).
 - Unused for days? `make destroy STACK=live/azure/poc/20-cluster`. Network and state stay.
 - The container registry (`25-registry`, Basic SKU) is a flat ~$5/month and cannot be
   stopped. Destroy it too if the environment is idle for weeks; images are the only state.
+- Managed Prometheus (`40-observability`) bills only samples ingested (~$0.11 per 10 M in
+  Sweden Central), roughly $2–6/month for this cluster running 24/7 and nothing while it is
+  stopped. The portal Grafana dashboards are free. See ADR 0008.
 
 ## Container images
 
@@ -199,6 +211,26 @@ See [`docs/adr/0009-network-access-and-authentication.md`](docs/adr/0009-network
 - Not restricted (Entra ID only): ACR (Basic SKU has no firewall), Azure Monitor workspace,
   Automation account.
 
+## Metrics and dashboards
+
+Azure Monitor managed Prometheus scrapes the cluster (kubelet, cAdvisor, node-exporter,
+kube-state-metrics with the *minimal ingestion profile*) and stores 18 months in the
+`amw-cloudinfra-poc` workspace. Dashboards are the free **Azure Monitor > Dashboards with
+Grafana** experience; the standard Kubernetes / Node Exporter community dashboards work out
+of the box because `40-observability` also installs the recording rules they need.
+
+```sh
+az aks show -g rg-cloudinfra-poc -n aks-cloudinfra-poc --query azureMonitorProfile.metrics.enabled   # add-on on?
+kubectl -n kube-system get pods -l rsName=ama-metrics                                             # agent healthy?
+make output STACK=live/azure/poc/40-observability                                                  # query endpoint
+```
+
+Application metrics: pods in the workload namespaces annotated with
+`prometheus.io/scrape: "true"` (plus `prometheus.io/port`, optional `prometheus.io/path`) are
+scraped too; the allow-list of namespaces is the `ama-metrics-settings-configmap` in
+`gitops/platform/azure-monitor-metrics/`. Query anything with PromQL in **Monitor > Metrics
+explorer with PromQL**, or point any Grafana at the `query_endpoint` output with Entra ID auth.
+
 ## Day-to-day
 
 ```sh
@@ -216,6 +248,7 @@ Optional: `pre-commit install` to run fmt/validate on commit.
 - [x] `azure/poc` deployed: state backend, network, AKS, Argo CD, platform services, Tekton (2026-10-20)
 - [x] Container registry (`modules/azure/acr`, `live/azure/poc/25-registry`)
 - [x] Access control: Norway + operator-egress allowlists on ingress, API server and state storage; dashboards via port-forward only (ADR 0009)
+- [x] Metrics: Azure Monitor managed Prometheus + portal Grafana dashboards (`40-observability`)
 - [ ] AWS: `modules/aws/{network,eks}`, `live/aws/poc/*`
 - [ ] GCP: `modules/gcp/{network,gke}`, `live/gcp/poc/*`
 - [ ] CI: GitHub Actions with OIDC to Azure running `plan` on PRs

@@ -10,6 +10,9 @@
 # Entra Workload ID webhook (ADR 0004): off by default, 200m CPU on the single node.
 # workload_identity_enabled = true   # when the first federated credential exists
 #
+# Managed Prometheus agent (ADR 0008). false = no ama-metrics pods, no ingestion cost.
+# azure_monitor_metrics_enabled = true
+#
 # Cost controls (ADR 0004)
 # auto_stop_times = ["17:00", "22:00"]   # [] to disable; one daily stop schedule per entry
 # auto_start_time = "08:00"   # weekdays; null = start manually

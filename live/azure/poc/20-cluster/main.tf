@@ -83,6 +83,9 @@ module "aks" {
   # are a to-do); its webhook alone would request 200m of the node's 1900m CPU (ADR 0004).
   # Set true in tfvars when the first federated credential is created; in-place update.
   workload_identity_enabled = var.workload_identity_enabled
+
+  # Managed Prometheus agent (ADR 0008); destination is the 40-observability stack.
+  azure_monitor_metrics_enabled = var.azure_monitor_metrics_enabled
 }
 
 # Cost control: stop the cluster at the end of the working day, and again late in the
