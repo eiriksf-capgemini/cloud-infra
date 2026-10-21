@@ -57,6 +57,14 @@ apps:
           - .webhooks[].clientConfig.caBundle
           - .webhooks[].namespaceSelector.matchExpressions[] | select(.key == "kubernetes.azure.com/managedby" or .key == "control-plane")
 
+  aks-metrics-server:
+    # Azure-specific (ADR 0004): fixed-size metrics-server via the AKS NannyConfiguration
+    # ConfigMap, so the two managed replicas stop requesting ~150m CPU each on a 2-vCPU node.
+    enabled: true
+    namespace: kube-system
+    createNamespace: false
+    syncWave: "10"
+
   tekton-operator:
     # Tekton Operator (upstream release YAML, pinned in gitops/platform/tekton-operator, v0.77.0).
     # Installs itself into tekton-operator; the TektonConfig in gitops/apps/platform/tekton

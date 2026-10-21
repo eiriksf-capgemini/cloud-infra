@@ -30,7 +30,14 @@ control plane is free.
    2 vCPU / 4 GB. The first apply of `B2als_v2` failed with `AllocationFailed` (no capacity in
    the region at that moment), so `B2ls_v2` was used first. With Argo CD, Tekton (Pipelines + Triggers), ingress-nginx
    and cert-manager the 4 GB node ran out of schedulable memory, so the default moved to
-   `Standard_B2as_v2` (2 vCPU / 8 GB, $0.078/h, ~$17/month with auto-stop). A 4-vCPU size
+   `Standard_B2as_v2` (2 vCPU / 8 GB, $0.078/h, ~$17/month with auto-stop). On 2026-10-21
+   that size too failed to allocate on a routine start (`AllocationFailed`, capacity not
+   quota, repeated for 15 minutes), so the default is now its Intel twin
+   **`Standard_B2s_v2`** (2 vCPU / 8 GB, $0.086/h, ~$19/month with auto-stop): same series,
+   same shape, 11% more, in a separate quota family (`Bsv2`, 4 vCPU free). It was chosen over
+   Azure's suggested `D2as_v5`/`D2s_v5` (non-burstable, 18–31% more) because the POC's load
+   is bursty and the price gap is smaller. The AMD `Basv2` family has now failed allocation
+   twice in this region (`B2als_v2` on 2026-10-20, `B2as_v2` on 2026-10-21). A 4-vCPU size
    would consume the whole regional quota and leave no room for upgrade surge nodes. `Standard_B2pls_v2` (arm64) is
    $0.034/h and was skipped only to avoid arm64 image surprises. With auto-stop the node
    costs roughly $9/month; the load balancer and public IP add a similar amount. No Log Analytics,
@@ -58,6 +65,12 @@ control plane is free.
 - Azure does not guarantee a cluster stopped for >30 days will start again. Destroy
   instead for long gaps.
 - While stopped, the load balancer rules/IP and OS disks still bill a few USD a month.
+- **CPU requests, not memory, are the binding constraint on a 2-vCPU node.** AKS's own
+  kube-system pods request ~1.3 of the 1.9 allocatable cores (metrics-server, CoreDNS and
+  the workload-identity webhook run two replicas each). Everything the POC adds is sized
+  for idle use: Tekton's three 100m deployments and ingress-nginx are trimmed in Git,
+  metrics-server is pinned through the AKS `metrics-server-config` ConfigMap, CoreDNS runs
+  one replica. Details and the live budget: `docs/runbooks/tekton.md`, item 4.
 - Free Trial quota is small. Measured in `norwayeast` and `swedencentral` on 2026-10-20 (identical): **4 regular vCPUs and
   3 Spot vCPUs for the whole region**, 4 per VM family. That means: one 2-vCPU system node,
   room for one surge node during upgrades, and at most one 2-vCPU Spot node. A 4-vCPU size

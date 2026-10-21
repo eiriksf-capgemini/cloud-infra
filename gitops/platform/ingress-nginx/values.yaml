@@ -10,7 +10,7 @@ controller:
       service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /healthz
   resources:
     requests:
-      cpu: 100m
+      cpu: 50m # idles at a few millicores; 100m was 5% of the node (ADR 0004)
       memory: 128Mi
     limits:
       memory: 256Mi
