@@ -32,10 +32,11 @@ Options compared on 2026-10-20 (Sweden Central retail prices, cluster on ~11 h/w
 2. **The scraper is the AKS metrics add-on** (`ama-metrics`), enabled through the AKS module
    (`azure_monitor_metrics_enabled`, default `true` in `20-cluster`). It keeps the default
    *minimal ingestion profile*, which collects only the metrics the standard dashboards and
-   rules use. **Measured footprint (2026-10-20): ~1350 MiB of memory requests and ~300m
-   CPU**, not the 300–500 MiB first estimated: two 530 MiB collector replicas (an add-on
-   managed HPA pins the minimum to 2), a 180 MiB node DaemonSet pod, kube-state-metrics
-   and the targets operator, all at `system-node-critical` priority. That is comparable to
+   rules use. **Measured footprint (2026-10-21): 1350 MiB of memory and 426m of CPU
+   requests**, not the 300–500 MiB first estimated: two collector replicas at 530 MiB /
+   170m each (an add-on managed HPA pins the minimum to 2), a node DaemonSet pod at
+   180 MiB / 70m, kube-state-metrics (50 MiB / 5m) and the targets operator (60 MiB /
+   11m), all but the last at `system-node-critical` priority. Actual use is ~50m. That is comparable to
    a self-hosted stack; what is saved is the storage, Grafana and upkeep, not node memory.
 3. **Default recording rules are managed in code.** Portal and CLI onboarding create them
    silently; OpenTofu must create them or the community dashboards show nothing. The three
@@ -77,8 +78,9 @@ Options compared on 2026-10-20 (Sweden Central retail prices, cluster on ~11 h/w
 - If the cluster is recreated, its resource ID changes and the association is orphaned:
   `make apply STACK=live/azure/poc/40-observability` replaces it (the cluster is looked up
   by name). Until then, metrics silently stop.
-- The add-on's ~1350 MiB of `system-node-critical` requests **preempt** ordinary workloads
-  when the node is full. On the 4 GB node (2026-10-20) it evicted cert-manager, ingress-nginx,
+- The add-on's `system-node-critical` requests (1350 MiB, 426m) **preempt** ordinary
+  workloads when the node is full. On a 2-vCPU node CPU requests, not memory, are what
+  runs out (ADR 0004, runbook item 4); the POC trims its own requests to make room. On the 4 GB node (2026-10-20) it evicted cert-manager, ingress-nginx,
   Tekton and the demo app; the add-on was switched off in-place
   (`azure_monitor_metrics_enabled = false`, no node rotation) and the node resized to 8 GB.
   Before enabling it on a new or smaller node, confirm the free requests with
