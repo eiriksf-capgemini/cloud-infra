@@ -1,0 +1,7 @@
+# Extra StorageClasses (ADR 0010). AKS's disk classes bind WaitForFirstConsumer, which
+# deadlocks Argo CD when a chart creates PVCs as Helm pre-install hooks (ThunderID does):
+# the hook waits for Bound, binding waits for a pod the sync has not created yet.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - managed-csi-immediate.yaml

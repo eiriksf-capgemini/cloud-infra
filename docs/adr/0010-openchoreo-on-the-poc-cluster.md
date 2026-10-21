@@ -101,5 +101,12 @@ requested (ADR 0004, runbook item 4). Two more constraints shaped the design:
   Memory is now the more likely limit. Measure with `kubectl describe node`.
 - **Login and secrets are development defaults.** Change Thunder's users and move OpenBao
   out of dev mode before the portal is shown to anyone outside the POC.
+- **Two upstream charts needed workarounds on first sync (2026-10-21):** kgateway's CRDs
+  (v2.3.1 through v2.4.1) are rejected by Kubernetes 1.36's CEL cost budget, so they are
+  vendored with length/item bounds added (`scripts/kgateway-crds-patch.py`, re-run on bumps);
+  ThunderID creates its PVCs as Helm pre-install hooks, which deadlocks Argo CD on AKS's
+  WaitForFirstConsumer disk classes, so it uses `managed-csi-immediate`
+  (`gitops/platform/storage-classes`). Node disk pressure during the initial image pull was
+  transient (cleared in 5 minutes).
 - **Pod Security**: OpenChoreo's namespaces carry no PSA labels (unlike ADR 0007 namespaces);
   kgateway's proxies and OpenBao need `baseline`. Revisit when the charts document it.
