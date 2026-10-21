@@ -134,7 +134,7 @@ variable "api_server_authorized_ip_ranges" {
 }
 
 variable "azure_monitor_metrics_enabled" {
-  description = "Enable the Azure Monitor metrics add-on (ama-metrics) that scrapes Prometheus metrics. Needs a destination from modules/azure/managed-prometheus; see ADR 0008. Costs ~300-500 MiB of node memory."
+  description = "Enable the Azure Monitor metrics add-on (ama-metrics) that scrapes Prometheus metrics. Needs a destination from modules/azure/managed-prometheus; see ADR 0008. The add-on pods request ~1350 MiB memory / ~300m CPU at system-node-critical priority and preempt other pods on a full node."
   type        = bool
   default     = false
 }

@@ -5,17 +5,19 @@ Status: Accepted
 
 ## Context
 
-The POC needs cluster and application metrics. The cluster is one `Standard_B2ls_v2` node
-with 2.85 GiB allocatable memory, of which ~1.6 GiB is already requested by Argo CD,
-ingress-nginx, cert-manager, Tekton and the AKS system pods. It is stopped every night
-(ADR 0004). Spend must stay close to zero.
+The POC needs cluster and application metrics. The cluster is one small burstable node
+that also runs Argo CD, ingress-nginx, cert-manager, Tekton and the AKS system pods. When
+this was decided it was a `Standard_B2ls_v2` (4 GB, 2.85 GiB allocatable, ~1.6 GiB already
+requested); it has since been resized to `Standard_B2as_v2` (8 GB, ADR 0004) because the
+platform set alone did not fit. It is stopped outside working hours (ADR 0004). Spend must
+stay close to zero.
 
 Options compared on 2026-10-20 (Sweden Central retail prices, cluster on ~11 h/weekday):
 
 | Option | ~USD/month | Notes |
 |---|---|---|
-| kube-prometheus-stack on the current node | 2.4 (PV) | ~1 GiB RSS on a node with a few hundred MiB left; evictions likely; no dashboards while stopped |
-| kube-prometheus-stack + 8 GB node (`B2as_v2`) | 14–28 | Stable, portable, full Grafana; doubles the node price |
+| kube-prometheus-stack on the 4 GB node | 2.4 (PV) | ~1 GiB RSS on a node with a few hundred MiB left; evictions likely; no dashboards while stopped |
+| kube-prometheus-stack on an 8 GB node (`B2as_v2`) | 14–28 | Stable, portable, full Grafana; at decision time this meant doubling the node price (the node was later resized for other reasons) |
 | **Managed Prometheus + Azure Monitor dashboards with Grafana** | **2–6** | Ingestion only; Grafana UI in the portal is free (preview); no Grafana alerting/plugins |
 | Managed Prometheus + Azure Managed Grafana Standard | 40–70 | $0.043/h per Standard unit (X1 = 2 units) + $6/active user; Essential tier is deprecated |
 | Grafana Cloud Free + Alloy remote_write | 0 | 10k series / 14 days / 3 users; data leaves Azure; another vendor account |
@@ -30,8 +32,11 @@ Options compared on 2026-10-20 (Sweden Central retail prices, cluster on ~11 h/w
 2. **The scraper is the AKS metrics add-on** (`ama-metrics`), enabled through the AKS module
    (`azure_monitor_metrics_enabled`, default `true` in `20-cluster`). It keeps the default
    *minimal ingestion profile*, which collects only the metrics the standard dashboards and
-   rules use. The add-on costs roughly 300–500 MiB of node memory, about half of a
-   self-hosted stack.
+   rules use. **Measured footprint (2026-10-20): ~1350 MiB of memory requests and ~300m
+   CPU**, not the 300–500 MiB first estimated: two 530 MiB collector replicas (an add-on
+   managed HPA pins the minimum to 2), a 180 MiB node DaemonSet pod, kube-state-metrics
+   and the targets operator, all at `system-node-critical` priority. That is comparable to
+   a self-hosted stack; what is saved is the storage, Grafana and upkeep, not node memory.
 3. **Default recording rules are managed in code.** Portal and CLI onboarding create them
    silently; OpenTofu must create them or the community dashboards show nothing. The three
    Linux rule groups are copied verbatim from Microsoft's reference template
@@ -72,8 +77,13 @@ Options compared on 2026-10-20 (Sweden Central retail prices, cluster on ~11 h/w
 - If the cluster is recreated, its resource ID changes and the association is orphaned:
   `make apply STACK=live/azure/poc/40-observability` replaces it (the cluster is looked up
   by name). Until then, metrics silently stop.
-- The 300–500 MiB the add-on needs comes out of the ~1.2 GiB the node still has free. If
-  pods start pending, the fallback order is: drop Tekton, then move to `Standard_B2as_v2`.
+- The add-on's ~1350 MiB of `system-node-critical` requests **preempt** ordinary workloads
+  when the node is full. On the 4 GB node (2026-10-20) it evicted cert-manager, ingress-nginx,
+  Tekton and the demo app; the add-on was switched off in-place
+  (`azure_monitor_metrics_enabled = false`, no node rotation) and the node resized to 8 GB.
+  Before enabling it on a new or smaller node, confirm the free requests with
+  `kubectl describe node` (memory and CPU both). If pods start pending, the fallback order
+  is: turn the add-on off, then drop Tekton, then a larger node.
 - Azure-only. The GitOps layer carries one Azure-specific ConfigMap under `gitops/platform`,
   flagged as such in the cluster chart values.
 - The portal Grafana is preview and lacks alerts, reports, library panels and app plugins.
