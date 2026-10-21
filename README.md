@@ -112,7 +112,7 @@ live/<cloud>/<env>/ one directory per stack, each with its own state
   azure/poc/25-registry   uses modules/azure/acr; grants AcrPull to the cluster's kubelet identity
   azure/poc/30-gitops     uses modules/k8s/argocd-bootstrap
 
-scripts/            helpers (country-prefixes.py regenerates the country allowlist)
+scripts/            helpers (country-prefixes.py regenerates the country allowlist; gh-app-token.mjs mints the agents' GitHub App token)
 
 gitops/             what Argo CD reconciles INTO the cluster
   clusters/azure-dev      Helm chart: platform Applications + workload ApplicationSet (environment: dev)
@@ -232,6 +232,13 @@ Open operational items are tracked per topic in [`docs/runbooks/`](docs/runbooks
 3. Before pushing: `make fmt validate-all`, and `kubectl kustomize` / `helm template` for anything under `gitops/`.
 4. Open a PR; one reviewer; squash-merge. Argo CD applies `gitops/` changes within minutes of merge, so a merged PR is a deployment.
 5. Never commit `*.tfstate`, `*.tfvars` (except `*.example`) or credentials; they are gitignored on purpose.
+6. **Coding agents push and open PRs as `hal9000-agent-bot[bot]`**, never as the human they run for, so author and
+   reviewer are different principals. In the same shell call as the commit, push or `gh pr create`:
+   `eval "$(node scripts/gh-app-token.mjs --env)"`, then push over HTTPS
+   (`git push https://github.com/eiriksf-capgemini/cloud-infra.git HEAD:<branch>`) and check
+   `gh pr view <n> --json author -q .author.login` prints `app/hal9000-agent-bot`. Needs the gitignored
+   `.gh-app-identity.json` at the repo root; setup in
+   [common-ai/skills/github-app-agent-identity](https://github.com/eiriksf-capgemini/common-ai/tree/main/skills/github-app-agent-identity).
 
 ## Team
 
