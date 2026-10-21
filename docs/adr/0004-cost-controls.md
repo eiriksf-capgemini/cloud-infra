@@ -65,6 +65,12 @@ control plane is free.
 - Azure does not guarantee a cluster stopped for >30 days will start again. Destroy
   instead for long gaps.
 - While stopped, the load balancer rules/IP and OS disks still bill a few USD a month.
+- **CPU requests, not memory, are the binding constraint on a 2-vCPU node.** AKS's own
+  kube-system pods request ~1.3 of the 1.9 allocatable cores (metrics-server, CoreDNS and
+  the workload-identity webhook run two replicas each). Everything the POC adds is sized
+  for idle use: Tekton's three 100m deployments and ingress-nginx are trimmed in Git,
+  metrics-server is pinned through the AKS `metrics-server-config` ConfigMap, CoreDNS runs
+  one replica. Details and the live budget: `docs/runbooks/tekton.md`, item 4.
 - Free Trial quota is small. Measured in `norwayeast` and `swedencentral` on 2026-10-20 (identical): **4 regular vCPUs and
   3 Spot vCPUs for the whole region**, 4 per VM family. That means: one 2-vCPU system node,
   room for one surge node during upgrades, and at most one 2-vCPU Spot node. A 4-vCPU size

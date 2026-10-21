@@ -65,12 +65,27 @@ authenticating proxy (oauth2-proxy with Entra ID) sits in front of it.
    Root cause of the stall: the `platform` LimitRange gave the controller a 256Mi limit and
    it was OOM-killed mid-sync (12 restarts). The bootstrap module now sets resources for
    every Argo CD component (controller limit 1Gi).
-4. **Node capacity.** System node is `Standard_B2s_v2` (2 vCPU / 8 GB). Memory requests
-   ~42%, **CPU requests ~90%**: the next few pods may fail to schedule. Tekton components
-   request 100m each; Azure Monitor managed Prometheus (from the `40-observability` stack,
-   PR #2) requests ~1.2 GB / ~300m. Options: trim requests via `TektonConfig` options, or a
-   second node (regular pool uses the whole 4-vCPU Free Trial quota; a Spot pool has its own
-   3-vCPU quota but is tainted, so only workloads with tolerations land there).
+4. **Node capacity.** System node is `Standard_B2s_v2` (2 vCPU / 8 GB, 1900m allocatable).
+   Measured 2026-10-21 before trimming: memory requests 44%, **CPU requests 1877m (98%)**,
+   Argo CD controller (100m) and server (25m) Pending. kube-system alone took 1277m
+   (metrics-server 2×151m, CoreDNS 2×100m, workload-identity webhook 2×100m, kube-proxy and
+   retina 100m each); Tekton's webhook, remote-resolvers and operator proxy webhook 100m
+   each; ingress-nginx 100m. Trims in Git (this repo): `TektonConfig`
+   `spec.pipeline.options.deployments` sets those three to 20m, ingress-nginx to 50m, and
+   `gitops/platform/aks-metrics-server` pins metrics-server to 60m per replica. Two more
+   are AKS-owned objects, applied by hand on the live cluster (Argo CD does not manage
+   kube-system defaults):
+   ```sh
+   # CoreDNS: one replica on a one-node cluster (AKS ladder default is 2)
+   kubectl -n kube-system patch cm coredns-autoscaler --type merge -p '{"data":{"ladder":"{\"coresToReplicas\":[[1,1],[512,3],[1024,4],[2048,5]],\"nodesToReplicas\":[[1,1],[8,3],[16,4],[32,5]]}"}}'
+   # metrics-server: pick up the ConfigMap once after its first sync
+   kubectl -n kube-system rollout restart deployment metrics-server
+   ```
+   Budget after all five: ~1300m + Argo CD 125m + managed Prometheus add-on ~300m (PR #2),
+   ~170m free. Next lever if needed: `workload_identity_enabled = false` in the AKS module
+   (nothing uses it yet; 200m). A second node is not an option: the regular pool uses the
+   whole 4-vCPU Free Trial quota; a Spot pool has its own 3-vCPU quota but is tainted, so
+   only workloads with tolerations land there.
 5. **Helm/Argo gotchas recorded for next time**: `make apply` must use the saved plan
    (interactive prompts fail in the `!` shell); cluster-scoped Helm leftovers (CRDs,
    ClusterRoles) need `meta.helm.sh/release-namespace` re-pointed when a release moves

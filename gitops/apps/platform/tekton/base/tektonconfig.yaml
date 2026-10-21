@@ -32,3 +32,37 @@ spec:
   pipeline:
     disable-affinity-assistant: true
     enable-api-fields: beta
+    # Upstream requests 100m CPU for each of these three deployments; measured idle use is a
+    # few millicores. 300m is 16% of the 2-vCPU node (ADR 0004). Limits stay upstream.
+    options:
+      deployments:
+        tekton-pipelines-webhook:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: webhook
+                    resources:
+                      requests:
+                        cpu: 20m
+                        memory: 100Mi
+        tekton-pipelines-remote-resolvers:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: controller
+                    resources:
+                      requests:
+                        cpu: 20m
+                        memory: 100Mi
+        tekton-operator-proxy-webhook:
+          spec:
+            template:
+              spec:
+                containers:
+                  - name: proxy
+                    resources:
+                      requests:
+                        cpu: 20m
+                        memory: 100Mi
