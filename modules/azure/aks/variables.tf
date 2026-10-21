@@ -111,6 +111,12 @@ variable "dns_service_ip" {
   default     = "10.0.0.10"
 }
 
+variable "workload_identity_enabled" {
+  description = "Run the Entra Workload ID mutating webhook (azure-wi-webhook, 2 replicas x 100m CPU). Only needed once a pod uses azure.workload.identity/use. The OIDC issuer stays on regardless, so turning this on later is an in-place update (ADR 0004)."
+  type        = bool
+  default     = true
+}
+
 variable "api_server_authorized_ip_ranges" {
   description = "CIDRs allowed to reach the API server endpoint (kubectl, Argo CD CLI, CI). [] = reachable from anywhere (Entra ID still required). Max 200. Recovery if locked out: az aks update --api-server-authorized-ip-ranges."
   type        = list(string)

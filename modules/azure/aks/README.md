@@ -30,6 +30,7 @@ expose the same `cluster_*` / `oidc_issuer_url` outputs and the same `name`,
 | `local_account_disabled` | bool | `false` |
 | `pod_cidr` / `service_cidr` / `dns_service_ip` | string | `10.244.0.0/16` / `10.0.0.0/16` / `10.0.0.10` |
 | `api_server_authorized_ip_ranges` | list(string) | `[]` | source firewall on the public API endpoint, max 200 CIDRs (ADR 0009) |
+| `workload_identity_enabled` | bool | `true` | Entra Workload ID webhook (2 × 100m CPU); OIDC issuer is always on |
 
 ## Outputs
 

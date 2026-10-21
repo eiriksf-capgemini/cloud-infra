@@ -97,6 +97,12 @@ variable "admin_group_object_ids" {
   default     = []
 }
 
+variable "workload_identity_enabled" {
+  description = "Entra Workload ID webhook on the cluster. Off until something needs it; costs 200m CPU requests on the single node (ADR 0004)."
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
   type    = map(string)
   default = {}
