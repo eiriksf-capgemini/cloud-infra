@@ -293,6 +293,9 @@ sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keyc
 curl --cacert poc-root-ca.crt https://podinfo.20.91.237.179.nip.io/                                   # check
 ```
 
+Argo CD loads `argocd-server-tls` at start-up only: after the first issuance (and if a renewed
+certificate is not picked up) run `kubectl -n platform rollout restart deployment argocd-server`.
+
 New app: add `cert-manager.io/cluster-issuer: poc-ca` and a `tls` block to its dev Ingress
 (see `gitops/apps/demo/podinfo/overlays/dev/ingress.yaml`). Let's Encrypt replaces the CA once
 a DNS zone exists; the Ingress annotations stay the same.

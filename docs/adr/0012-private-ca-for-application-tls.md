@@ -31,6 +31,9 @@ cannot be relied on. cert-manager is already installed (OpenChoreo needs it).
 
 ## Consequences
 
+- argocd-server does not reload `argocd-server-tls` while running (verified 2026-10-22: it kept
+  serving the old certificate for minutes until restarted). One `rollout restart` after the
+  first issuance; watch the same after renewals.
 - HTTP on podinfo redirects to HTTPS; the KEDA interceptor path is unchanged (TLS ends at
   ingress-nginx).
 - The root key lives in the `poc-root-ca` Secret in `cert-manager`. Anyone with read access
