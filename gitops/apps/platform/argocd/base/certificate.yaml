@@ -1,0 +1,21 @@
+# Argo CD serves TLS itself (ingress passthrough). It picks up a Secret named
+# argocd-server-tls in its namespace automatically, so this Certificate from the private CA
+# replaces the self-signed one it generated at install (ADR 0012).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: argocd-server
+spec:
+  secretName: argocd-server-tls
+  dnsNames:
+    - argo.CHANGEME
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  issuerRef:
+    name: poc-ca
+    kind: ClusterIssuer
+    group: cert-manager.io

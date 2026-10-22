@@ -18,6 +18,7 @@ Proof of concept, Azure first, structured so AWS and GCP slot in later. Decision
 - [Access control](#access-control)
 - [Metrics and dashboards](#metrics-and-dashboards)
 - [OpenChoreo](#openchoreo)
+- [TLS](#tls)
 - [Day-to-day](#day-to-day)
 - [Status](#status)
 - [Contributing](#contributing)
@@ -206,8 +207,7 @@ See [`docs/adr/0009-network-access-and-authentication.md`](docs/adr/0009-network
   users, generated into Key Vault `kv-cloudinfra-poc` and delivered by External Secrets (ADR
   0011). Read it with `make output STACK=live/azure/poc/35-secrets` → `read_admin_password_command`.
 - **Argo CD** is at https://argo.20.91.237.179.nip.io (its own login, user `admin`; TLS
-  passthrough with Argo CD's self-signed certificate, so expect a browser warning until a DNS
-  zone and ClusterIssuer exist). The **Tekton Dashboard** has no login and stays behind the
+  passthrough with a certificate from the POC's private CA, see [TLS](#tls)). The **Tekton Dashboard** has no login and stays behind the
   Kubernetes API:
 
   ```sh
@@ -278,6 +278,25 @@ The getting-started sample (environments dev/staging/prod, a pipeline, the defau
 component types) is installed from upstream, pinned to v1.3.1 (`gitops/platform/openchoreo-config`).
 Workflow and observability planes are not installed; see ADR 0010.
 
+## TLS
+
+See [`docs/adr/0012-private-ca-for-application-tls.md`](docs/adr/0012-private-ca-for-application-tls.md).
+
+cert-manager keeps a private root CA (`poc-root-ca`) and the `poc-ca` ClusterIssuer signs
+application certificates with it: podinfo (TLS at ingress-nginx, HTTP redirects) and Argo CD
+(its own server certificate) today; OpenChoreo still HTTP. Browsers trust the certificates
+after a one-time import of the root:
+
+```sh
+kubectl -n cert-manager get secret poc-root-ca -o jsonpath='{.data.ca\.crt}' | base64 -d > poc-root-ca.crt
+sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain poc-root-ca.crt   # macOS
+curl --cacert poc-root-ca.crt https://podinfo.20.91.237.179.nip.io/                                   # check
+```
+
+New app: add `cert-manager.io/cluster-issuer: poc-ca` and a `tls` block to its dev Ingress
+(see `gitops/apps/demo/podinfo/overlays/dev/ingress.yaml`). Let's Encrypt replaces the CA once
+a DNS zone exists; the Ingress annotations stay the same.
+
 ## Day-to-day
 
 ```sh
@@ -297,6 +316,7 @@ Optional: `pre-commit install` to run fmt/validate on commit.
 - [x] Access control: Norway + operator-egress allowlists on ingress, API server and state storage; dashboards via port-forward only (ADR 0009)
 - [x] Metrics: Azure Monitor managed Prometheus + portal Grafana dashboards (`40-observability`)
 - [x] OpenChoreo 1.3.1 (control + data plane) behind the static ingress IP; KEDA scale-to-zero for HTTP demos (ADR 0010)
+- [x] One admin password from Key Vault via External Secrets (ADR 0011); private CA TLS for podinfo + Argo CD (ADR 0012)
 - [ ] AWS: `modules/aws/{network,eks}`, `live/aws/poc/*`
 - [ ] GCP: `modules/gcp/{network,gke}`, `live/gcp/poc/*`
 - [ ] CI: GitHub Actions with OIDC to Azure running `plan` on PRs
