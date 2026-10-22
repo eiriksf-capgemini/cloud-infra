@@ -107,6 +107,10 @@ requested (ADR 0004, runbook item 4). Two more constraints shaped the design:
   ThunderID creates its PVCs as Helm pre-install hooks, which deadlocks Argo CD on AKS's
   WaitForFirstConsumer disk classes, so it uses `managed-csi-immediate`
   (`gitops/platform/storage-classes`). Node disk pressure during the initial image pull was
-  transient (cleared in 5 minutes).
+  transient (cleared in 5 minutes). The CA copy is a CronJob, not a Sync hook: Argo CD does
+  not assess child-Application health by default, so the root app's waves did not order the
+  OpenChoreo Applications and the hook ran before the control plane existed. Health
+  assessment is now enabled in the bootstrap module (`30-gitops`), and workload Deployments
+  ignore `/spec/replicas` so self-heal does not undo KEDA.
 - **Pod Security**: OpenChoreo's namespaces carry no PSA labels (unlike ADR 0007 namespaces);
   kgateway's proxies and OpenBao need `baseline`. Revisit when the charts document it.

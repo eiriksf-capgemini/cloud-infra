@@ -44,6 +44,12 @@ spec:
       destination:
         server: {{ .Values.destinationServer }}
         namespace: '{{ `{{ index .path.segments 2 }}` }}'
+      # Autoscalers (KEDA scale-to-zero, HPA) own spec.replicas at runtime (ADR 0010).
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers:
+            - /spec/replicas
       syncPolicy:
         automated:
           prune: true
@@ -52,6 +58,7 @@ spec:
           # Custom resources (e.g. TektonConfig) may be applied before their CRD exists;
           # skip the dry-run for those and let the retry pick them up.
           - SkipDryRunOnMissingResource=true
+          - RespectIgnoreDifferences=true
         retry:
           limit: 10
           backoff:
