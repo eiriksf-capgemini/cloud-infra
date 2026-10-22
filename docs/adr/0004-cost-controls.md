@@ -73,6 +73,12 @@ control plane is free.
 - Azure does not guarantee a cluster stopped for >30 days will start again. Destroy
   instead for long gaps.
 - While stopped, the load balancer rules/IP and OS disks still bill a few USD a month.
+- **OS disk: 64 GB, not 32.** Measured 2026-10-22 with OpenChoreo installed: the node image
+  ships ~5 GB of pre-baked AKS images, every start re-pulls the platform's ~50 images (6.6 GB
+  compressed), and the 32 GB disk went to 29 GB used, `DiskPressure`, image GC thrash and
+  `pull QPS exceeded` for 10–15 minutes until it settled at ~21 GB. 64 GB (P6, ~$10/month, +$4)
+  keeps pulls under the eviction threshold. Changing the size rotates the pool, i.e. with the
+  saturated quota it is applied at the next recreate (`docs/runbooks/recreate-cluster.md`).
 - **CPU requests, not memory, are the binding constraint on a 2-vCPU node.** AKS's own
   kube-system pods request ~1.3 of the 1.9 allocatable cores (metrics-server, CoreDNS and
   the workload-identity webhook run two replicas each). Everything the POC adds is sized
