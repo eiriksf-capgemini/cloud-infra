@@ -124,6 +124,13 @@ apps:
     serverSideApply: true
     syncWave: "10"
 
+  platform-secrets:
+    # Shared admin password from Key Vault via External Secrets (ADR 0011); needs the ESO
+    # CRDs (wave 10) and the thunder namespace.
+    enabled: true
+    namespace: thunder
+    syncWave: "12"
+
   openbao:
     # Dev mode, in-memory; see gitops/platform/openbao/values.yaml.
     enabled: true

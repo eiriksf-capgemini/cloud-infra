@@ -1,0 +1,4 @@
+# All variables have POC defaults; override here if needed (file is gitignored).
+# key_vault_name        = "kv-cloudinfra-poc"   # globally unique; change gitops/platform/platform-secrets too
+# extra_sources         = ["203.0.113.7"]        # your home IP, so `az keyvault secret show` works from there
+# admin_password_length = 24

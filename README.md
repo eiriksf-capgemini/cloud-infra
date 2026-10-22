@@ -41,7 +41,7 @@ first apply:
 ```sh
 for p in Microsoft.Compute Microsoft.Network Microsoft.Storage Microsoft.ManagedIdentity \
          Microsoft.ContainerService Microsoft.ContainerRegistry Microsoft.Automation \
-         Microsoft.Monitor Microsoft.Insights Microsoft.AlertsManagement; do \
+         Microsoft.Monitor Microsoft.Insights Microsoft.AlertsManagement Microsoft.KeyVault; do \
   az provider register -n $p --wait; done
 ```
 
@@ -82,6 +82,10 @@ kubectl -n platform port-forward svc/argocd-server 8080:443
 #    is on by default in 20-cluster and starts shipping as soon as this exists
 make init plan apply STACK=live/azure/poc/40-observability
 #    dashboards: portal > Monitor > Dashboards with Grafana (nothing to install)
+
+# 7. shared admin password (~1 min): Key Vault + generated secret; External Secrets delivers it
+make init plan apply STACK=live/azure/poc/35-secrets
+make output STACK=live/azure/poc/35-secrets           # read_admin_password_command
 ```
 
 Open https://localhost:8080. The `root` Application syncs `gitops/clusters/azure-dev`, which
@@ -89,7 +93,7 @@ installs ingress-nginx and cert-manager and discovers every workload under
 `gitops/apps/*/*/overlays/dev`. From here on, change the cluster by committing to `gitops/`.
 Adding an application is described in `gitops/apps/README.md`.
 
-Tear down in reverse: `40-observability` → `30-gitops` → `25-registry` → `20-cluster` → `10-network`; keep `00-tfstate`.
+Tear down in reverse: `35-secrets` → `40-observability` → `30-gitops` → `25-registry` → `20-cluster` → `10-network`; keep `00-tfstate`.
 Destroying the registry deletes every image in it.
 
 ## Tech stack
@@ -110,6 +114,7 @@ modules/            reusable building blocks
   azure/aks-autostop  Azure Automation schedules that stop the cluster daily (ADR 0004)
   azure/acr         Container registry + AcrPull/AcrPush role assignments (ADR 0006)
   azure/managed-prometheus  Azure Monitor workspace + DCR/DCE + default recording rules (ADR 0008)
+  azure/keyvault    Key Vault + generated secrets; source of the shared admin password (ADR 0011)
   aws/, gcp/        placeholders: same interface, not implemented yet
   k8s/argocd-bootstrap  Argo CD + root app-of-apps; cloud-agnostic (helm provider only)
 
@@ -121,6 +126,7 @@ live/<cloud>/<env>/ one directory per stack, each with its own state
   azure/poc/20-cluster    uses modules/azure/aks
   azure/poc/25-registry   uses modules/azure/acr; grants AcrPull to the cluster's kubelet identity
   azure/poc/30-gitops     uses modules/k8s/argocd-bootstrap
+  azure/poc/35-secrets    uses modules/azure/keyvault; grants the kubelet identity read access (ADR 0011)
   azure/poc/40-observability  uses modules/azure/managed-prometheus; cluster add-on is switched on in 20-cluster
 
 scripts/            helpers (country-prefixes.py regenerates the country allowlist; gh-app-token.mjs mints the agents' GitHub App token)
@@ -196,6 +202,9 @@ See [`docs/adr/0009-network-access-and-authentication.md`](docs/adr/0009-network
 - **AKS API server and the state storage account** accept only the trusted-egress ranges
   (`20-cluster`: `api_server_extra_sources`, `00-tfstate`: `storage_extra_sources` for a
   home IP). Entra ID is still required on top.
+- **One admin password** for Argo CD `admin`, Thunder's admin console and the seeded OpenChoreo
+  users, generated into Key Vault `kv-cloudinfra-poc` and delivered by External Secrets (ADR
+  0011). Read it with `make output STACK=live/azure/poc/35-secrets` → `read_admin_password_command`.
 - **Argo CD** is at https://argo.20.91.237.179.nip.io (its own login, user `admin`; TLS
   passthrough with Argo CD's self-signed certificate, so expect a browser warning until a DNS
   zone and ClusterIssuer exist). The **Tekton Dashboard** has no login and stays behind the
@@ -251,8 +260,8 @@ Argo CD Applications under `gitops/platform/`, fronted by ingress-nginx on the s
 
 | What | URL | Login |
 |---|---|---|
-| Argo CD | https://argo.20.91.237.179.nip.io | `admin` + rotated password (see Day-to-day) |
-| Portal (Backstage) | http://console.openchoreo.20.91.237.179.nip.io | `admin@openchoreo.dev` / `Admin@123` (reference defaults; also `developer@`, `platform-engineer@`, `sre@`) |
+| Argo CD | https://argo.20.91.237.179.nip.io | `admin` + the shared admin password (ADR 0011) |
+| Portal (Backstage) | http://console.openchoreo.20.91.237.179.nip.io | `admin@openchoreo.dev` (also `developer@`, `platform-engineer@`, `sre@`) with the shared admin password (ADR 0011) |
 | API | http://api.openchoreo.20.91.237.179.nip.io | OIDC via Thunder |
 | ThunderID | http://thunder.openchoreo.20.91.237.179.nip.io | same users |
 | Deployed components | http://`<component>-<env>`.openchoreoapis.20.91.237.179.nip.io | per component |

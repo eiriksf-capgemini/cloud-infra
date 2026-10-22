@@ -71,6 +71,13 @@ secrets:
     storageClass: managed-csi-immediate
 setup:
   enabled: true
+  # Thunder's own admin console user takes the shared platform admin password (ADR 0011),
+  # delivered by External Secrets from Key Vault (gitops/platform/platform-secrets).
+  admin:
+    username: admin
+    passwordRef:
+      name: platform-admin
+      key: password
 
 # Declarative resource definitions applied by the setup job's in-process
 # bootstrap on top of the chart's shipped defaults (01-default-resources.yaml).
@@ -179,7 +186,7 @@ bootstrap:
         given_name: Admin
         family_name: User
       credentials:
-        password: "Admin@123"
+        password: "{{ .ADMIN_PASSWORD }}"
       ---
       resource_type: user
       id: 01900000-0000-7000-8001-000000000031
@@ -191,7 +198,7 @@ bootstrap:
         given_name: Developer
         family_name: User
       credentials:
-        password: "Dev@123"
+        password: "{{ .ADMIN_PASSWORD }}"
       ---
       resource_type: user
       id: 01900000-0000-7000-8001-000000000032
@@ -203,7 +210,7 @@ bootstrap:
         given_name: Platform
         family_name: Engineer
       credentials:
-        password: "PE@123"
+        password: "{{ .ADMIN_PASSWORD }}"
       ---
       resource_type: user
       id: 01900000-0000-7000-8001-000000000033
@@ -215,7 +222,7 @@ bootstrap:
         given_name: SRE
         family_name: User
       credentials:
-        password: "SRE@123"
+        password: "{{ .ADMIN_PASSWORD }}"
       ---
       resource_type: group
       id: 01900000-0000-7000-8001-000000000040
