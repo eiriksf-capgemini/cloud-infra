@@ -93,6 +93,8 @@ context if `kubectl config get-contexts` shows two.
   stale for the running Kubernetes version; regenerate with `scripts/kgateway-crds-patch.py`.
 - `thunder` waiting for PVC hooks: the PVCs are not on `managed-csi-immediate`; check the
   values and that the `storage-classes` app synced.
-- Argo CD app stuck on `cluster-gateway-ca`: the Sync hook in `openchoreo-gateway-ca` waits for
-  cert-manager to issue the control-plane CA; check `kubectl -n openchoreo-control-plane get
-  certificate,job`.
+- Data-plane `cluster-agent` stuck in ContainerCreating (`configmap "cluster-gateway-ca" not
+  found`): the `gateway-ca-sync` CronJob in `openchoreo-control-plane` copies it every 5 min once
+  cert-manager has issued the CA; check `kubectl -n openchoreo-control-plane get certificate,cronjob,job`.
+- The 22:00 auto-stop fires during a long evening session too; `make aks-start` and Argo CD
+  resumes where it was.

@@ -218,6 +218,15 @@ apps:
         namespace: openchoreo-control-plane
         jsonPointers:
           - /data/ca.crt
+      # Gateway API defaults group/kind/weight on refs; the chart omits them.
+      - group: gateway.networking.k8s.io
+        kind: HTTPRoute
+        jqPathExpressions:
+          - .spec.parentRefs[].group
+          - .spec.parentRefs[].kind
+          - .spec.rules[].backendRefs[].group
+          - .spec.rules[].backendRefs[].kind
+          - .spec.rules[].backendRefs[].weight
 
   openchoreo-gateway-ca:
     # Sync hook Job: cluster-gateway CA Secret -> ConfigMaps in both plane namespaces.
@@ -250,6 +259,22 @@ apps:
     createNamespace: false
     serverSideApply: true
     syncWave: "35"
+    # The OpenChoreo webhook defaults these on admission; the upstream sample omits them.
+    ignoreDifferences:
+      - group: openchoreo.dev
+        kind: ClusterTrait
+        jqPathExpressions:
+          - .spec.patches[].targetPlane
+      - group: openchoreo.dev
+        kind: ClusterComponentType
+        jqPathExpressions:
+          - .spec.resources[].targetPlane
+      - group: openchoreo.dev
+        kind: DeploymentPipeline
+        jqPathExpressions:
+          - .metadata.finalizers
+          - .spec.promotionPaths[].sourceEnvironmentRef.kind
+          - .spec.promotionPaths[].targetEnvironmentRefs[].kind
 
   external-dns:
     # Needs an Azure DNS zone and a workload identity before it can do anything.

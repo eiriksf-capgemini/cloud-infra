@@ -1,47 +1,55 @@
+# Idempotent copy of the cluster-gateway CA into the ConfigMaps the planes' agents mount.
+# A CronJob rather than a Sync hook: Argo CD does not order Applications by wave unless
+# Application health assessment is enabled, and a hook that fails (CA not issued yet) is not
+# retried until the next sync. This runs every 5 minutes, exits quickly when the CA is not
+# there yet, and also follows a CA rotation. Cost: one short kubectl pod per run.
 apiVersion: batch/v1
-kind: Job
+kind: CronJob
 metadata:
   name: gateway-ca-sync
   namespace: openchoreo-control-plane
-  annotations:
-    argocd.argoproj.io/hook: Sync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
-  backoffLimit: 3
-  activeDeadlineSeconds: 900
-  template:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  startingDeadlineSeconds: 240
+  jobTemplate:
     spec:
-      serviceAccountName: gateway-ca-sync
-      restartPolicy: OnFailure
-      securityContext:
-        runAsNonRoot: true
-        runAsUser: 65532
-        seccompProfile:
-          type: RuntimeDefault
-      containers:
-        - name: kubectl
-          # Same image the control-plane chart uses for its own bootstrap job.
-          image: registry.k8s.io/kubectl:v1.36.0
-          command: ["/bin/sh", "-ec"]
-          args:
-            - |
-              cp=openchoreo-control-plane; dp=openchoreo-data-plane
-              echo "waiting for secret $cp/cluster-gateway-ca (issued by cert-manager)"
-              until kubectl -n "$cp" get secret cluster-gateway-ca -o name >/dev/null 2>&1; do sleep 5; done
-              ca=$(kubectl -n "$cp" get secret cluster-gateway-ca -o jsonpath='{.data.ca\.crt}' | base64 -d)
-              [ -n "$ca" ] || { echo "empty ca.crt"; exit 1; }
-              for ns in "$cp" "$dp"; do
-                kubectl -n "$ns" create configmap cluster-gateway-ca --from-literal=ca.crt="$ca" \
-                  --dry-run=client -o yaml | kubectl apply -f -
-              done
-              kubectl label namespace default openchoreo.dev/control-plane=true --overwrite
+      backoffLimit: 1
+      activeDeadlineSeconds: 120
+      ttlSecondsAfterFinished: 600
+      template:
+        spec:
+          serviceAccountName: gateway-ca-sync
+          restartPolicy: Never
           securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-          resources:
-            requests:
-              cpu: 10m
-              memory: 32Mi
-            limits:
-              memory: 128Mi
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: kubectl
+              # Same image the control-plane chart uses for its own bootstrap job (Debian-based, has sh).
+              image: registry.k8s.io/kubectl:v1.36.0
+              command: ["/bin/sh", "-ec"]
+              args:
+                - |
+                  cp=openchoreo-control-plane; dp=openchoreo-data-plane
+                  ca=$(kubectl -n "$cp" get secret cluster-gateway-ca -o jsonpath='{.data.ca\.crt}' 2>/dev/null | base64 -d || true)
+                  if [ -z "$ca" ]; then echo "secret $cp/cluster-gateway-ca not issued yet; retrying next run"; exit 0; fi
+                  for ns in "$cp" "$dp"; do
+                    kubectl -n "$ns" create configmap cluster-gateway-ca --from-literal=ca.crt="$ca" \
+                      --dry-run=client -o yaml | kubectl apply -f -
+                  done
+                  kubectl label namespace default openchoreo.dev/control-plane=true --overwrite
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi

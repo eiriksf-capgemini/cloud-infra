@@ -40,6 +40,26 @@ locals {
         # TLS is terminated by the ingress later; until then use `kubectl port-forward`.
         "server.insecure" = false
       }
+      cm = {
+        # Argo CD stopped assessing the health of child Applications by default, which
+        # means the root app's sync waves do not wait for one Application before creating
+        # the next. The OpenChoreo chain (ADR 0010) depends on that ordering. Standard Lua
+        # from the Argo CD docs (operator-manual/health).
+        "resource.customizations.health.argoproj.io_Application" = <<-LUA
+          hs = {}
+          hs.status = "Progressing"
+          hs.message = ""
+          if obj.status ~= nil then
+            if obj.status.health ~= nil then
+              hs.status = obj.status.health.status
+              if obj.status.health.message ~= nil then
+                hs.message = obj.status.health.message
+              end
+            end
+          end
+          return hs
+        LUA
+      }
     }
   }
 }
