@@ -1,7 +1,7 @@
 # ThunderID, the OpenChoreo identity provider (ADR 0010). Copied from the OpenChoreo reference
 # install (install/k3d/common/values-thunder.yaml, release-v1.3) with the hostnames rewritten
-# for this cluster: plain HTTP on the ingress IP, as the rest of the POC (ADR 0009: no TLS,
-# no DNS zone yet). Contains the DEFAULT USERS AND PASSWORDS of the reference install
+# for this cluster: HTTPS on the ingress IP, terminated by ingress-nginx with the POC's private
+# CA (ADR 0012); Thunder itself listens on plain HTTP inside the cluster (httpOnly). Contains the DEFAULT USERS AND PASSWORDS of the reference install
 # (admin@openchoreo.dev / Admin@123 etc.) and a SQLite database on three small PVCs.
 # Reachable only from the ADR 0009 allowlists; replace before anyone outside the POC uses it.
 # Shared ThunderID helm values for k3d dev setups.
@@ -38,12 +38,12 @@ hpa:
 configuration:
   server:
     httpOnly: true
-    publicUrl: "http://thunder.openchoreo.20.91.237.179.nip.io"
+    publicUrl: "https://thunder.openchoreo.20.91.237.179.nip.io"
 
   gateClient:
     hostname: "thunder.openchoreo.20.91.237.179.nip.io"
-    port: 80
-    scheme: "http"
+    port: 443
+    scheme: "https"
 
   database:
     config:
@@ -57,7 +57,7 @@ configuration:
 
   passkey:
     allowedOrigins:
-      - "http://console.openchoreo.20.91.237.179.nip.io"
+      - "https://console.openchoreo.20.91.237.179.nip.io"
 
 # PVCs are Helm pre-install hooks in this chart; WaitForFirstConsumer would deadlock the Argo CD
 # sync (gitops/platform/storage-classes). Same disk SKU as the default class.
@@ -139,7 +139,7 @@ bootstrap:
       name: cors
       value:
         allowedOrigins:
-          - "http://console.openchoreo.20.91.237.179.nip.io"
+          - "https://console.openchoreo.20.91.237.179.nip.io"
           - "http://localhost:7007"
 
     50-user-schema-and-users.yaml: |
@@ -279,7 +279,7 @@ bootstrap:
             clientId: openchoreo-backstage-client
             clientSecret: backstage-portal-secret
             redirectUris:
-              - "http://console.openchoreo.20.91.237.179.nip.io/api/auth/openchoreo-auth/handler/frame"
+              - "https://console.openchoreo.20.91.237.179.nip.io/api/auth/openchoreo-auth/handler/frame"
             grantTypes:
               - authorization_code
               - client_credentials
@@ -638,7 +638,7 @@ bootstrap:
       id: 01900000-0000-7000-8001-000000000070
       name: OpenChoreo Control Plane
       description: OpenChoreo control plane MCP server
-      identifier: "http://api.openchoreo.20.91.237.179.nip.io/mcp"
+      identifier: "https://api.openchoreo.20.91.237.179.nip.io/mcp"
       type: MCP
       ouHandle: default
       ---

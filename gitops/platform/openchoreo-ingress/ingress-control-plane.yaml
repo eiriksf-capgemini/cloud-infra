@@ -7,8 +7,17 @@ metadata:
     # Backstage and the API hold long-lived connections (SSE/websocket).
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # TLS from the POC's private CA (ADR 0012); kgateway behind stays plain HTTP.
+    cert-manager.io/cluster-issuer: poc-ca
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.openchoreo.20.91.237.179.nip.io
+        - console.openchoreo.20.91.237.179.nip.io
+        - thunder.openchoreo.20.91.237.179.nip.io
+      secretName: openchoreo-control-plane-tls
   rules:
     - host: api.openchoreo.20.91.237.179.nip.io
       http:

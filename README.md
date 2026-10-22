@@ -263,10 +263,10 @@ Argo CD Applications under `gitops/platform/`, fronted by ingress-nginx on the s
 | What | URL | Login |
 |---|---|---|
 | Argo CD | https://argo.20.91.237.179.nip.io | `admin` + the shared admin password (ADR 0011) |
-| Portal (Backstage) | http://console.openchoreo.20.91.237.179.nip.io | `admin@openchoreo.dev` (also `developer@`, `platform-engineer@`, `sre@`) with the shared admin password (ADR 0011) |
-| API | http://api.openchoreo.20.91.237.179.nip.io | OIDC via Thunder |
-| ThunderID | http://thunder.openchoreo.20.91.237.179.nip.io | same users |
-| Deployed components | http://`<component>-<env>`.openchoreoapis.20.91.237.179.nip.io | per component |
+| Portal (Backstage) | https://console.openchoreo.20.91.237.179.nip.io | `admin@openchoreo.dev` (also `developer@`, `platform-engineer@`, `sre@`) with the shared admin password (ADR 0011) |
+| API | https://api.openchoreo.20.91.237.179.nip.io | OIDC via Thunder |
+| ThunderID | https://thunder.openchoreo.20.91.237.179.nip.io | same users |
+| Deployed components | https://`<component>-<env>`.openchoreoapis.20.91.237.179.nip.io | per component |
 
 ```sh
 kubectl get clusterdataplane,environments,projects -A                    # registered plane + sample resources
@@ -283,9 +283,9 @@ Workflow and observability planes are not installed; see ADR 0010.
 See [`docs/adr/0012-private-ca-for-application-tls.md`](docs/adr/0012-private-ca-for-application-tls.md).
 
 cert-manager keeps a private root CA (`poc-root-ca`) and the `poc-ca` ClusterIssuer signs
-application certificates with it: podinfo (TLS at ingress-nginx, HTTP redirects) and Argo CD
-(its own server certificate) today; OpenChoreo still HTTP. Browsers trust the certificates
-after a one-time import of the root:
+application certificates with it: podinfo and the OpenChoreo hosts (TLS at ingress-nginx, HTTP
+redirects) and Argo CD (its own server certificate). Browsers trust the certificates after a
+one-time import of the root:
 
 ```sh
 kubectl -n cert-manager get secret poc-root-ca -o jsonpath='{.data.ca\.crt}' | base64 -d > poc-root-ca.crt

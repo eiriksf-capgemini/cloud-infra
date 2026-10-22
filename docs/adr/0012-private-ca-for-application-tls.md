@@ -22,10 +22,15 @@ cannot be relied on. cert-manager is already installed (OpenChoreo needs it).
    where the application terminates TLS itself (Argo CD's `argocd-server-tls`, which it picks
    up automatically; the ingress passthrough is unchanged). Swapping the CA for a real one
    later is a one-line issuerRef change.
-3. **First step: podinfo and Argo CD.** OpenChoreo stays HTTP for now: moving it means
-   rewriting its public URLs (OIDC issuer, Backstage base URL) and adding the upstream's
-   trust workarounds because Backstage and Thunder must trust the private CA. Second step,
-   separate ADR update.
+3. **podinfo and Argo CD first, OpenChoreo the same day (2026-10-22).** OpenChoreo's three
+   control-plane hosts share one certificate and `*.openchoreoapis.<ip>.nip.io` gets a
+   wildcard one, both terminated at ingress-nginx; kgateway behind stays HTTP. Its public
+   URLs (API, Backstage base URL and redirect, OIDC issuer/JWKS/authorize/token, Thunder's
+   gate client and allowed origins, the Backstage client's redirect URI, the MCP resource
+   server identifier) are https. Two trust workarounds from the upstream HTTPS install stay
+   until a publicly trusted CA exists: the API skips TLS verification when fetching Thunder's
+   JWKS, and Backstage runs with Node's certificate check disabled. Both only affect
+   in-cluster calls to hostnames behind the ADR 0009 allowlist.
 4. **Trusting the CA is a one-time import on each operator laptop** (README "TLS"). Until
    then browsers warn; the connection is still encrypted.
 

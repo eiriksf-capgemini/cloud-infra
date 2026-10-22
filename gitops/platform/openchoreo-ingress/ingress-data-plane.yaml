@@ -3,8 +3,16 @@ kind: Ingress
 metadata:
   name: openchoreo-data-plane
   namespace: openchoreo-data-plane
+  annotations:
+    # Wildcard certificate from the private CA (ADR 0012).
+    cert-manager.io/cluster-issuer: poc-ca
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - "*.openchoreoapis.20.91.237.179.nip.io"
+      secretName: openchoreo-data-plane-tls
   rules:
     # Every component OpenChoreo exposes gets <component>-<env>.openchoreoapis.20.91.237.179.nip.io
     - host: "*.openchoreoapis.20.91.237.179.nip.io"

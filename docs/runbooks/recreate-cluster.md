@@ -68,7 +68,7 @@ kubectl get pods -A --field-selector=status.phase!=Running,status.phase!=Succeed
 kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}'  # 20.91.237.179
 kubectl describe node | sed -n '/Allocated resources/,/Events/p'       # CPU < ~85%, memory < ~60%
 curl -sI http://podinfo.20.91.237.179.nip.io/ | head -1                # 200 (after a cold start of a few seconds)
-curl -sI http://console.openchoreo.20.91.237.179.nip.io/ | head -1     # 200 / 302 to Thunder
+curl -sI https://console.openchoreo.20.91.237.179.nip.io/ | head -1    # 200 / 302 to Thunder
 kubectl -n kube-system get pods | grep ama-                            # metrics add-on back
 ```
 
