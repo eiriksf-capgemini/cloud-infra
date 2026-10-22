@@ -25,13 +25,14 @@ spec:
           restartPolicy: Never
           securityContext:
             runAsNonRoot: true
-            runAsUser: 65532
+            runAsUser: 999
             seccompProfile:
               type: RuntimeDefault
           containers:
             - name: kubectl
-              # Same image the control-plane chart uses for its own bootstrap job (Debian-based, has sh).
-              image: registry.k8s.io/kubectl:v1.36.0
+              # registry.k8s.io/kubectl is distroless (no /bin/sh: StartError). The Argo CD image is
+              # already on every node, pinned by 30-gitops, and ships sh + kubectl; it runs as uid 999.
+              image: quay.io/argoproj/argocd:v3.5.5
               command: ["/bin/sh", "-ec"]
               args:
                 - |
