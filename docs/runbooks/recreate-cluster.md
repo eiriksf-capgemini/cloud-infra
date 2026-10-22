@@ -96,6 +96,13 @@ context if `kubectl config get-contexts` shows two.
   stale for the running Kubernetes version; regenerate with `scripts/kgateway-crds-patch.py`.
 - `thunder` waiting for PVC hooks: the PVCs are not on `managed-csi-immediate`; check the
   values and that the `storage-classes` app synced.
+- `thunder` re-sync stuck on "waiting for deletion of hook PersistentVolumeClaim": the chart's
+  PVCs are PreSync hooks with `before-hook-creation`, so every manual sync deletes and
+  recreates them (Thunder's SQLite is reset and re-seeded from the bootstrap; nothing of
+  value is lost). The running pod holds them: `kubectl -n thunder delete pod -l
+  app.kubernetes.io/name=thunderid` releases them and the sync completes in ~30 s. Hook-only
+  changes (setup job env, bootstrap users) never show as drift, so changing the admin
+  password source or the seeded users needs that manual sync (`argocd app sync thunder`).
 - Data-plane `cluster-agent` stuck in ContainerCreating (`configmap "cluster-gateway-ca" not
   found`): the `gateway-ca-sync` CronJob in `openchoreo-control-plane` copies it every 5 min once
   cert-manager has issued the CA; check `kubectl -n openchoreo-control-plane get certificate,cronjob,job`.

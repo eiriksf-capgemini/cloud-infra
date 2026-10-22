@@ -148,12 +148,17 @@ apps:
     chartVersion: 2.21.0
     serverSideApply: true
     syncWave: "10"
-    # cert-controller injects the CA into the webhook at runtime.
+    # Runtime mutations, same set as cert-manager: KEDA's cert controller injects the CA, the
+    # API server defaults service.port and rules[].scope, and the AKS admissions enforcer adds
+    # namespaceSelector expressions exempting kube-system / control-plane namespaces.
     ignoreDifferences:
       - group: admissionregistration.k8s.io
         kind: ValidatingWebhookConfiguration
         jqPathExpressions:
           - .webhooks[].clientConfig.caBundle
+          - .webhooks[].clientConfig.service.port
+          - .webhooks[].rules[].scope
+          - .webhooks[].namespaceSelector.matchExpressions[] | select(.key == "kubernetes.azure.com/managedby" or .key == "control-plane")
 
   keda-add-ons-http:
     enabled: true
@@ -272,6 +277,7 @@ apps:
         kind: ClusterTrait
         jqPathExpressions:
           - .spec.patches[].targetPlane
+          - .spec.creates[].targetPlane
       - group: openchoreo.dev
         kind: ClusterComponentType
         jqPathExpressions:
