@@ -1,0 +1,8 @@
+# Private CA for the POC (ADR 0012): a self-signed root kept by cert-manager, and a
+# ClusterIssuer that signs application certificates with it. Browsers trust the result once
+# the root is imported (README "TLS"). Replace the `poc-ca` issuer with an ACME/real-CA one
+# when a DNS zone exists; the Ingress/Certificate objects do not change.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - issuers.yaml

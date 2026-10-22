@@ -9,8 +9,15 @@ metadata:
   annotations:
     # The interceptor needs the original Host to pick the HTTPScaledObject.
     nginx.ingress.kubernetes.io/upstream-vhost: podinfo.20.91.237.179.nip.io
+    # TLS from the POC's private CA (ADR 0012); cert-manager fills podinfo-tls.
+    cert-manager.io/cluster-issuer: poc-ca
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   ingressClassName: nginx
+  tls:
+    - hosts:
+        - podinfo.20.91.237.179.nip.io
+      secretName: podinfo-tls
   rules:
     - host: podinfo.20.91.237.179.nip.io
       http:

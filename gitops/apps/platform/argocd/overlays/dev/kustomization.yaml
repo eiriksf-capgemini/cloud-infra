@@ -16,3 +16,10 @@ patches:
       - op: replace
         path: /spec/rules/0/host
         value: argo.20.91.237.179.nip.io
+  - target:
+      kind: Certificate
+      name: argocd-server
+    patch: |-
+      - op: replace
+        path: /spec/dnsNames/0
+        value: argo.20.91.237.179.nip.io

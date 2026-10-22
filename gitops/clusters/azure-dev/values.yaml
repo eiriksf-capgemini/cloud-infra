@@ -57,6 +57,13 @@ apps:
           - .webhooks[].clientConfig.caBundle
           - .webhooks[].namespaceSelector.matchExpressions[] | select(.key == "kubernetes.azure.com/managedby" or .key == "control-plane")
 
+  cluster-issuers:
+    # Private CA: self-signed root + `poc-ca` ClusterIssuer (ADR 0012). Needs cert-manager's CRDs.
+    enabled: true
+    namespace: cert-manager
+    createNamespace: false
+    syncWave: "11"
+
   aks-metrics-server:
     # Azure-specific (ADR 0004): fixed-size metrics-server via the AKS NannyConfiguration
     # ConfigMap, so the two managed replicas stop requesting ~150m CPU each on a 2-vCPU node.
