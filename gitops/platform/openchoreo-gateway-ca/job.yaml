@@ -25,20 +25,24 @@ spec:
           restartPolicy: Never
           securityContext:
             runAsNonRoot: true
-            runAsUser: 999
+            runAsUser: 65532
             seccompProfile:
               type: RuntimeDefault
           containers:
             - name: kubectl
-              # registry.k8s.io/kubectl is distroless (no /bin/sh: StartError). The Argo CD image is
-              # already on every node, pinned by 30-gitops, and ships sh + kubectl; it runs as uid 999.
-              image: quay.io/argoproj/argocd:v3.5.5
+              # Needs sh + base64 + kubectl. registry.k8s.io/kubectl is distroless (StartError) and the
+              # Argo CD 3.x image no longer ships kubectl (the script failed silently). alpine/k8s is
+              # busybox + kubectl matching the cluster version, pinned by digest.
+              image: docker.io/alpine/k8s:1.36.4@sha256:358ddfc2d6ff3f00dd461dbd79aaa6d6738709f225b8da0945bb63bd4dbc304e
               command: ["/bin/sh", "-ec"]
               args:
                 - |
                   cp=openchoreo-control-plane; dp=openchoreo-data-plane
-                  ca=$(kubectl -n "$cp" get secret cluster-gateway-ca -o jsonpath='{.data.ca\.crt}' 2>/dev/null | base64 -d || true)
-                  if [ -z "$ca" ]; then echo "secret $cp/cluster-gateway-ca not issued yet; retrying next run"; exit 0; fi
+                  if ! kubectl -n "$cp" get secret cluster-gateway-ca -o name >/dev/null; then
+                    echo "secret $cp/cluster-gateway-ca not readable or not issued yet; retrying next run"; exit 0
+                  fi
+                  ca=$(kubectl -n "$cp" get secret cluster-gateway-ca -o jsonpath='{.data.ca\.crt}' | base64 -d)
+                  [ -n "$ca" ] || { echo "empty ca.crt"; exit 1; }
                   for ns in "$cp" "$dp"; do
                     kubectl -n "$ns" create configmap cluster-gateway-ca --from-literal=ca.crt="$ca" \
                       --dry-run=client -o yaml | kubectl apply -f -
