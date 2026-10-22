@@ -1,6 +1,10 @@
 # ingress-nginx chart values for the POC cluster (one node).
 controller:
   replicaCount: 1
+  # TLS passthrough for Argo CD (gitops/apps/platform/argocd): nginx forwards the TLS stream
+  # untouched on hosts that ask for it; every other host is still plain HTTP.
+  extraArgs:
+    enable-ssl-passthrough: "true"
   ingressClassResource:
     default: true
   service:

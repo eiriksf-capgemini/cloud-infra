@@ -1,0 +1,25 @@
+# Argo CD behind ingress-nginx with TLS passthrough (ADR 0009, revised 2026-10-22): the
+# connection stays encrypted end to end with argocd-server's own certificate (self-signed
+# until a DNS zone and ClusterIssuer exist), so the login never crosses the wire in clear.
+# Reachable only from the Norway/operator allowlist like every other ingress host.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-server
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: argo.CHANGEME
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  name: https

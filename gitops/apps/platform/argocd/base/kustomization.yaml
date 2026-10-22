@@ -1,0 +1,6 @@
+# Argo CD itself is installed by live/azure/poc/30-gitops (Helm). This app only adds what
+# publishes it: the Ingress. Namespace comes from the overlay.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ingress.yaml
