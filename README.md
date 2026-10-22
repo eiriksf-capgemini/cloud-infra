@@ -224,7 +224,9 @@ See [`docs/adr/0009-network-access-and-authentication.md`](docs/adr/0009-network
   ```
 
   then add the range to `trusted-egress-ipv4.txt` (or the stack's `*_extra_sources`) so the
-  next apply does not remove it.
+  next apply does not remove it. Note that not everything leaves through Zscaler: calls to
+  some Microsoft data-plane endpoints (Key Vault, 2026-10-22) exit from the Capgemini
+  corporate range `198.184.231.0/24`, which is therefore in the list too.
 - Not restricted (Entra ID only): ACR (Basic SKU has no firewall), Azure Monitor workspace,
   Automation account.
 - **OpenChoreo** (portal, API, Thunder, workload gateway) shares the ingress IP and allowlist. It
