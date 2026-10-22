@@ -1,6 +1,7 @@
 # ingress-nginx routes for the two OpenChoreo Gateways (ADR 0010). One public IP serves the
 # whole POC (Free Trial quota), so the kgateway proxies are ClusterIP Services named after
 # their Gateway (gateway-default) and these Ingresses hand them the Host header unchanged.
+# TLS terminates here with certificates from the private CA (ADR 0012).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
