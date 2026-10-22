@@ -37,7 +37,10 @@ all. The owner wants every service authenticated and no traffic from outside Nor
    list. `api_server_restricted` / `storage_restricted` default to `true`. ARM operations
    are unaffected, so a lockout is always recoverable with `az` (see README).
 4. **No unauthenticated service through the ingress.** The Tekton Dashboard ingress is
-   removed; it is reached via `kubectl port-forward`, like Argo CD, which means Entra ID
+   removed; it is reached via `kubectl port-forward`. *Revised 2026-10-22:* Argo CD, which
+   has its own login, TLS and RBAC, is published at `argo.<ingress-ip>.nip.io` with TLS
+   passthrough (`gitops/apps/platform/argocd`), still only from the allowlist; the Tekton
+   Dashboard stays port-forward only. For Tekton that means Entra ID
    first. podinfo stays as the public reference app behind the country filter.
 5. **Not done, and why.** ACR Basic cannot filter IPs (Premium is ~$50/month); the Monitor
    workspace and Automation account would need Private Link; both are Entra-only and stay

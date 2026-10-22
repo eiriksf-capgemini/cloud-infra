@@ -196,11 +196,12 @@ See [`docs/adr/0009-network-access-and-authentication.md`](docs/adr/0009-network
 - **AKS API server and the state storage account** accept only the trusted-egress ranges
   (`20-cluster`: `api_server_extra_sources`, `00-tfstate`: `storage_extra_sources` for a
   home IP). Entra ID is still required on top.
-- **Dashboards are not public.** Argo CD and the Tekton Dashboard are reached through the
-  Kubernetes API, i.e. after Entra ID login:
+- **Argo CD** is at https://argo.20.91.237.179.nip.io (its own login, user `admin`; TLS
+  passthrough with Argo CD's self-signed certificate, so expect a browser warning until a DNS
+  zone and ClusterIssuer exist). The **Tekton Dashboard** has no login and stays behind the
+  Kubernetes API:
 
   ```sh
-  kubectl -n platform port-forward svc/argocd-server 8080:443        # https://localhost:8080, user admin
   kubectl -n platform port-forward svc/tekton-dashboard 9097:9097    # http://localhost:9097 (read-only)
   ```
 
@@ -250,6 +251,7 @@ Argo CD Applications under `gitops/platform/`, fronted by ingress-nginx on the s
 
 | What | URL | Login |
 |---|---|---|
+| Argo CD | https://argo.20.91.237.179.nip.io | `admin` + rotated password (see Day-to-day) |
 | Portal (Backstage) | http://console.openchoreo.20.91.237.179.nip.io | `admin@openchoreo.dev` / `Admin@123` (reference defaults; also `developer@`, `platform-engineer@`, `sre@`) |
 | API | http://api.openchoreo.20.91.237.179.nip.io | OIDC via Thunder |
 | ThunderID | http://thunder.openchoreo.20.91.237.179.nip.io | same users |
