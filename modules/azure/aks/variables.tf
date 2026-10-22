@@ -24,7 +24,7 @@ variable "system_node_pool" {
   type = object({
     vm_size    = optional(string, "Standard_B4s_v2") # 4 vCPU / 16 GB burstable, Intel; 2 vCPU was full before OpenChoreo (ADR 0004, 0010)
     node_count = optional(number, 1)
-    os_disk_gb = optional(number, 32) # P4 tier; AKS minimum is 30
+    os_disk_gb = optional(number, 64) # P6; 32 GB thrashed on image pulls with ~50 pods (ADR 0004)
   })
   default = {}
 }

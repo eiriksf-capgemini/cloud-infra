@@ -25,7 +25,7 @@ variable "system_node_pool" {
   type = object({
     vm_size    = optional(string, "Standard_B4s_v2") # 4 vCPU / 16 GB, Intel; uses the whole Free Trial quota, see ADR 0004 / 0010
     node_count = optional(number, 1)
-    os_disk_gb = optional(number, 32) # P4 tier; AKS minimum is 30
+    os_disk_gb = optional(number, 64) # P6 (~$10/month); 32 GB hit DiskPressure on every start, see ADR 0004
   })
   default = {}
 }

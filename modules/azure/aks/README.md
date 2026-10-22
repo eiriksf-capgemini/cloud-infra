@@ -14,7 +14,7 @@ expose the same `cluster_*` / `oidc_issuer_url` outputs and the same `name`,
 | `name` | string | – |
 | `location` | string | – |
 | `kubernetes_version` | string | `null` (region default) |
-| `system_node_pool` | object | 1× `Standard_B4s_v2`, 32 GB disk |
+| `system_node_pool` | object | 1× `Standard_B4s_v2`, 64 GB disk |
 | `user_node_pools` | map(object) | `{}` |
 | `tags` | map(string) | `{}` |
 

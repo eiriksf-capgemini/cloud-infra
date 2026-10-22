@@ -87,8 +87,10 @@ context if `kubectl config get-contexts` shows two.
   twice here.
 - `20-cluster` apply stops on the API allowlist: your egress is not in
   `live/azure/poc/allowlist/trusted-egress-ipv4.txt`; see README "Locked out?".
-- Node `DiskPressure` taint right after the gitops apply: image pulls of ~45 pods; clears by
-  itself within the kubelet's 5-minute transition period. Only act if it persists.
+- Node `DiskPressure` taint right after the gitops apply or after every `make aks-start`:
+  image pulls of ~50 pods into the OS disk; clears by itself within 5–15 minutes once image
+  GC has run. The 64 GB default (ADR 0004) removes it; a cluster still on 32 GB gets it at
+  the next recreate.
 - `kgateway-crds` OutOfSync with "estimated rule cost exceeds budget": the vendored CRDs are
   stale for the running Kubernetes version; regenerate with `scripts/kgateway-crds-patch.py`.
 - `thunder` waiting for PVC hooks: the PVCs are not on `managed-csi-immediate`; check the
