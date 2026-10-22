@@ -1,0 +1,9 @@
+# One admin password for every platform login (ADR 0011). Source: Key Vault secret
+# platform-admin-password (live/azure/poc/35-secrets). External Secrets reads it with the
+# node's managed identity and writes the per-service Secrets below. Nothing secret in Git.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - clustersecretstore.yaml
+  - externalsecret-argocd.yaml
+  - externalsecret-thunder.yaml

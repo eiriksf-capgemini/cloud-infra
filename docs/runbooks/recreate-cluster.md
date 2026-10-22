@@ -53,6 +53,7 @@ kubectl get nodes -o wide                               # one Standard_B4s_v2, R
 make plan apply STACK=live/azure/poc/25-registry       # AcrPull -> new kubelet identity (replace)
 make plan apply STACK=live/azure/poc/40-observability  # DCR association -> new cluster ID (replace)
 make plan apply STACK=live/azure/poc/30-gitops         # Argo CD + root app; ~5 min
+make plan apply STACK=live/azure/poc/35-secrets        # Key Vault grant -> new kubelet identity, firewall -> new egress IP
 ```
 
 Argo CD now installs everything from `gitops/`: ingress-nginx picks up the static IP, then
