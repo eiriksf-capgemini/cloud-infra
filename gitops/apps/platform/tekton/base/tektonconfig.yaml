@@ -56,6 +56,8 @@ spec:
                       requests:
                         cpu: 20m
                         memory: 100Mi
+        # Not 20m like the others: the operator ships an HPA (target 85% CPU, max 5) and the
+        # proxy idles at ~17m, so a 20m request made it scale to 5 replicas (5 x 20m, 5 x 100Mi).
         tekton-operator-proxy-webhook:
           spec:
             template:
@@ -64,5 +66,5 @@ spec:
                   - name: proxy
                     resources:
                       requests:
-                        cpu: 20m
+                        cpu: 50m
                         memory: 100Mi
