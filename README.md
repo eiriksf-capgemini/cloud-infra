@@ -192,6 +192,8 @@ az acr repository list --name acrmadbadgerbadger -o table
 ```
 
 Pin `image:` in `gitops/apps/<namespace>/<app>/overlays/<env>` to `acrmadbadgerbadger.azurecr.io/<repo>:<tag>`.
+The one platform image built here is the OpenChoreo console (`openchoreo-ui`, ADR 0013); see
+`docs/runbooks/openchoreo-console-image.md`.
 
 ## Access control
 
@@ -278,6 +280,13 @@ The getting-started sample (environments dev/staging/prod, a pipeline, the defau
 component types) is installed from upstream, pinned to v1.3.1 (`gitops/platform/openchoreo-config`).
 Workflow and observability planes are not installed; see ADR 0010.
 
+The portal's home page carries an **AI usage & cost** widget (ADR 0013): Anthropic
+organization cost plus the signed-in user's token usage for the last day and the last 7 days,
+read from the Anthropic Admin API. It needs a forked console image
+(`acrmadbadgerbadger.azurecr.io/openchoreo-ui`, built per chart version) and two Key Vault
+secrets, `anthropic-admin-api-key` and `anthropic-member-email`; procedure in
+[`docs/runbooks/openchoreo-console-image.md`](docs/runbooks/openchoreo-console-image.md).
+
 ## TLS
 
 See [`docs/adr/0012-private-ca-for-application-tls.md`](docs/adr/0012-private-ca-for-application-tls.md).
@@ -320,6 +329,7 @@ Optional: `pre-commit install` to run fmt/validate on commit.
 - [x] Metrics: Azure Monitor managed Prometheus + portal Grafana dashboards (`40-observability`)
 - [x] OpenChoreo 1.3.1 (control + data plane) behind the static ingress IP; KEDA scale-to-zero for HTTP demos (ADR 0010)
 - [x] One admin password from Key Vault via External Secrets (ADR 0011); private CA TLS for podinfo + Argo CD (ADR 0012)
+- [x] OpenChoreo console with the AI usage & cost widget from a forked image in ACR; Anthropic credentials from Key Vault (ADR 0013)
 - [ ] AWS: `modules/aws/{network,eks}`, `live/aws/poc/*`
 - [ ] GCP: `modules/gcp/{network,gke}`, `live/gcp/poc/*`
 - [ ] CI: GitHub Actions with OIDC to Azure running `plan` on PRs
