@@ -116,3 +116,20 @@ module "autostop" {
   timezone_utc_offset         = var.timezone_utc_offset
   tags                        = local.tags
 }
+
+# The OpenChoreo console mirrors Azure resources into its catalog by querying Resource Graph
+# with the identity the pod presents, which on this cluster is the kubelet identity over IMDS
+# (same path External Secrets uses for Key Vault, ADR 0011). Reader on both resource groups is
+# the whole permission (ADR 0015).
+resource "azurerm_role_assignment" "kubelet_reader" {
+  for_each = var.catalog_reader_enabled ? {
+    cluster = data.azurerm_resource_group.network.id
+    nodes   = "/subscriptions/${data.azurerm_client_config.current.subscription_id}/resourceGroups/${module.aks.node_resource_group}"
+  } : {}
+
+  scope                = each.value
+  role_definition_name = "Reader"
+  principal_id         = module.aks.kubelet_identity_object_id
+}
+
+data "azurerm_client_config" "current" {}
