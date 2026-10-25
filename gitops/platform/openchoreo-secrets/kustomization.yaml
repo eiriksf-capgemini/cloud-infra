@@ -1,11 +1,13 @@
 # Glue between OpenBao, External Secrets and the OpenChoreo control plane (ADR 0010):
 # the ClusterSecretStore every plane uses, and the Backstage secret it needs at start.
-# Also the Key Vault-sourced Anthropic credentials for the portal's AI usage widget
-# (ADR 0013); they live here rather than in platform-secrets because the
-# openchoreo-control-plane namespace only exists from wave 16.
+# Also the portal's AI usage widget secrets: the Key Vault-sourced Anthropic credentials
+# (ADR 0013) and the in-cluster generated telemetry ingest token (ADR 0014). They live
+# here rather than in platform-secrets because the openchoreo-control-plane namespace
+# only exists from wave 16.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - clustersecretstore.yaml
   - externalsecret-backstage.yaml
   - externalsecret-anthropic.yaml
+  - externalsecret-ai-usage-ingest.yaml

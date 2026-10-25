@@ -1,7 +1,8 @@
 # ADR 0013: an "AI usage & cost" widget on the OpenChoreo console, from a forked console image
 
 Date: 2026-10-23
-Status: Accepted
+Status: Accepted; the data-source decision (Anthropic Admin API) is superseded by ADR 0014,
+the forked image, Key Vault secrets and e-mail mapping stand.
 
 ## Context
 
