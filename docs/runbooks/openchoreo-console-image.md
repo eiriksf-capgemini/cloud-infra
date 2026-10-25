@@ -1,7 +1,8 @@
-# OpenChoreo console image (AI usage widget)
+# OpenChoreo console image (AI usage widget, Azure resources catalog module)
 
-Status as of 2026-10-25. Decisions in ADR 0013 (forked image) and ADR 0014 (telemetry data
-source); this page is how to run, configure and rebuild it.
+Status as of 2026-10-25. Decisions in ADR 0013 (forked image), ADR 0014 (telemetry data
+source) and ADR 0015 (Azure resources in the catalog); this page is how to run, configure and
+rebuild it.
 
 ## What runs
 
@@ -84,6 +85,24 @@ build stage sets `NODE_OPTIONS=--max-old-space-size=4096`; give the Docker VM at
 
 Then change `backstage.image.tag` (and `chartVersion` in `gitops/clusters/azure-dev/values.yaml`
 on a bump) in a PR. A merged PR is the deployment; Argo CD rolls the Backstage Deployment.
+
+## Azure resources in the catalog (ADR 0015)
+
+The same image carries `catalog-backend-module-azure-resources`. It is driven by
+`backstage.appConfig.azureResources` in the values file (subscriptions, resource groups,
+`types`, `dataPlanes`) and authenticates over IMDS with the kubelet identity, which
+`live/azure/poc/20-cluster` grants `Reader` on both resource groups
+(`catalog_reader_enabled`). Apply that stack before or after the image rolls; until the role
+exists the provider logs `query failed: 403` every 10 minutes and keeps the catalog as it is.
+
+```sh
+kubectl -n openchoreo-control-plane logs deploy/backstage | grep AzureResourceGraph   # "registered", then "applied N entities"
+az role assignment list --all --assignee $(az aks show -g rg-cloudinfra-poc -n aks-cloudinfra-poc --query identityProfile.kubeletidentity.objectId -o tsv) -o table
+```
+
+In the console, Catalog → kind **Resource** → namespace `azure`; the AKS cluster's page has
+the Azure portal link and a relation to the data plane `default`. Widen `types` to `['*']`
+for the whole resource groups (23 resources as of 2026-10-25).
 
 ## Check
 

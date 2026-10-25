@@ -119,3 +119,9 @@ variable "tags" {
   type    = map(string)
   default = {}
 }
+
+variable "catalog_reader_enabled" {
+  description = "Grant the kubelet identity the Reader role on the cluster's resource group and node resource group, so the OpenChoreo console's Azure resources catalog module can list them through Resource Graph over IMDS (ADR 0015). Replace with Workload ID when a second consumer appears."
+  type        = bool
+  default     = true
+}

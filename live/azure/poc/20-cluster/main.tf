@@ -116,3 +116,34 @@ module "autostop" {
   timezone_utc_offset         = var.timezone_utc_offset
   tags                        = local.tags
 }
+
+# The OpenChoreo console mirrors Azure resources into its catalog by querying Resource Graph
+# with the identity the pod presents, which on this cluster is the kubelet identity over IMDS
+# (same path External Secrets uses for Key Vault, ADR 0011). Reader on both resource groups is
+# the whole permission (ADR 0015). The identity and the node resource group are looked up by
+# AKS's naming convention rather than through module.aks outputs, so a targeted apply of these
+# two assignments does not touch the cluster resource (which also fails while the cluster is
+# stopped by the ADR 0004 schedule).
+data "azurerm_resource_group" "nodes" {
+  count = var.catalog_reader_enabled ? 1 : 0
+
+  name = "${data.azurerm_resource_group.network.name}-${local.cluster_name}-nodes"
+}
+
+data "azurerm_user_assigned_identity" "kubelet" {
+  count = var.catalog_reader_enabled ? 1 : 0
+
+  name                = "${local.cluster_name}-agentpool"
+  resource_group_name = data.azurerm_resource_group.nodes[0].name
+}
+
+resource "azurerm_role_assignment" "kubelet_reader" {
+  for_each = var.catalog_reader_enabled ? {
+    cluster = data.azurerm_resource_group.network.id
+    nodes   = data.azurerm_resource_group.nodes[0].id
+  } : {}
+
+  scope                = each.value
+  role_definition_name = "Reader"
+  principal_id         = data.azurerm_user_assigned_identity.kubelet[0].principal_id
+}

@@ -21,13 +21,13 @@ openchoreoApi:
             skip_tls_verify: true
 backstage:
   secretName: backstage-secrets   # ExternalSecret in gitops/platform/openchoreo-secrets
-  # Console image with the "AI usage & cost" home widget (ADR 0013, 0014): upstream
-  # openchoreo-ui 1.3.1 plus the openchoreo-ai-usage-backend plugin, built from the fork and
-  # pushed to the registry (docs/runbooks/openchoreo-console-image.md).
+  # Console image from the fork (docs/runbooks/openchoreo-console-image.md): upstream
+  # openchoreo-ui 1.3.1 plus the openchoreo-ai-usage-backend plugin (ADR 0013, 0014) and the
+  # catalog-backend-module-azure-resources module (ADR 0015), pushed to the registry.
   # Tag = <chart version>-ai-usage.<fork sha>.
   image:
     repository: acrmadbadgerbadger.azurecr.io/openchoreo-ui
-    tag: 1.3.1-ai-usage.14cea7fe
+    tag: 1.3.1-ai-usage.3963c57c
   baseUrl: "https://console.openchoreo.20.91.237.179.nip.io"
   http:
     hostnames:
@@ -77,6 +77,22 @@ backstage:
       aiUsage:
         users:
           - email: ${ANTHROPIC_MEMBER_EMAIL}
+    # Azure resources in the catalog (ADR 0015): the console queries Azure Resource Graph
+    # with the kubelet identity (Reader on both resource groups, granted in
+    # live/azure/poc/20-cluster) and mirrors the results as Resource entities in the
+    # `azure` namespace. Step one is the AKS cluster only, linked to the OpenChoreo data
+    # plane; widen `types` (['*'] for everything in the groups) once that is verified.
+    azureResources:
+      subscriptions:
+        - bf235fd4-99f0-4ecb-9f89-5916f261844a
+      resourceGroups:
+        - rg-cloudinfra-poc
+        - rg-cloudinfra-poc-aks-cloudinfra-poc-nodes
+      types:
+        - Microsoft.ContainerService/managedClusters
+      dataPlanes:
+        - cluster: aks-cloudinfra-poc
+          dataPlane: default
 security:
   oidc:
     issuer: "https://thunder.openchoreo.20.91.237.179.nip.io"
