@@ -137,6 +137,16 @@ data "azurerm_user_assigned_identity" "kubelet" {
   resource_group_name = data.azurerm_resource_group.nodes[0].name
 }
 
+# ADR 0016: the console's Cost Insights "Azure" tab reads Azure Cost Management at
+# subscription scope with the same identity; Cost Management Reader is read-only billing data.
+resource "azurerm_role_assignment" "kubelet_cost_reader" {
+  count = var.catalog_reader_enabled ? 1 : 0
+
+  scope                = "/subscriptions/${data.azurerm_client_config.current.subscription_id}"
+  role_definition_name = "Cost Management Reader"
+  principal_id         = data.azurerm_user_assigned_identity.kubelet[0].principal_id
+}
+
 resource "azurerm_role_assignment" "kubelet_reader" {
   for_each = var.catalog_reader_enabled ? {
     cluster = data.azurerm_resource_group.network.id
@@ -147,3 +157,5 @@ resource "azurerm_role_assignment" "kubelet_reader" {
   role_definition_name = "Reader"
   principal_id         = data.azurerm_user_assigned_identity.kubelet[0].principal_id
 }
+
+data "azurerm_client_config" "current" {}

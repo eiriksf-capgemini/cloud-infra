@@ -22,12 +22,13 @@ openchoreoApi:
 backstage:
   secretName: backstage-secrets   # ExternalSecret in gitops/platform/openchoreo-secrets
   # Console image from the fork (docs/runbooks/openchoreo-console-image.md): upstream
-  # openchoreo-ui 1.3.1 plus the openchoreo-ai-usage-backend plugin (ADR 0013, 0014) and the
-  # catalog-backend-module-azure-resources module (ADR 0015), pushed to the registry.
+  # openchoreo-ui 1.3.1 plus the openchoreo-ai-usage-backend plugin (ADR 0013, 0014), the
+  # catalog-backend-module-azure-resources module (ADR 0015) and the openchoreo-azure-cost
+  # backend with the Cost Insights "Azure" tab (ADR 0016), pushed to the registry.
   # Tag = <chart version>-ai-usage.<fork sha>.
   image:
     repository: acrmadbadgerbadger.azurecr.io/openchoreo-ui
-    tag: 1.3.1-ai-usage.3963c57c
+    tag: 1.3.1-ai-usage.37a26354
   baseUrl: "https://console.openchoreo.20.91.237.179.nip.io"
   http:
     hostnames:
@@ -80,8 +81,10 @@ backstage:
     # Azure resources in the catalog (ADR 0015): the console queries Azure Resource Graph
     # with the kubelet identity (Reader on both resource groups, granted in
     # live/azure/poc/20-cluster) and mirrors the results as Resource entities in the
-    # `azure` namespace. Step one is the AKS cluster only, linked to the OpenChoreo data
-    # plane; widen `types` (['*'] for everything in the groups) once that is verified.
+    # `azure` namespace: every resource in the two groups (23 as of 2026-10-25) plus one
+    # entity per resource group, the AKS cluster linked to the OpenChoreo data plane.
+    # The same subscription scopes Cost Insights → Azure (ADR 0016; Cost Management
+    # Reader, same stack); `cost` keeps the defaults (hourly snapshot, 30-day window).
     azureResources:
       subscriptions:
         - bf235fd4-99f0-4ecb-9f89-5916f261844a
@@ -89,7 +92,7 @@ backstage:
         - rg-cloudinfra-poc
         - rg-cloudinfra-poc-aks-cloudinfra-poc-nodes
       types:
-        - Microsoft.ContainerService/managedClusters
+        - '*'
       dataPlanes:
         - cluster: aks-cloudinfra-poc
           dataPlane: default
