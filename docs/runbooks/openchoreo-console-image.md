@@ -1,4 +1,4 @@
-# OpenChoreo console image (AI usage widget, Azure resources catalog module)
+# OpenChoreo console image (AI usage widget, Azure resources catalog module, Azure cost)
 
 Status as of 2026-10-25. Decisions in ADR 0013 (forked image), ADR 0014 (telemetry data
 source) and ADR 0015 (Azure resources in the catalog); this page is how to run, configure and
@@ -103,6 +103,23 @@ az role assignment list --all --assignee $(az aks show -g rg-cloudinfra-poc -n a
 In the console, Catalog → kind **Resource** → namespace `azure`; the AKS cluster's page has
 the Azure portal link and a relation to the data plane `default`. Widen `types` to `['*']`
 for the whole resource groups (23 resources as of 2026-10-25).
+
+## Azure cost in Cost Insights (ADR 0016)
+
+The image also carries `openchoreo-azure-cost-backend` and the Cost Insights **Azure** tab.
+Scope is `azureResources.subscriptions`; the identity needs **Cost Management Reader** on
+the subscription (`kubelet_cost_reader` in `live/azure/poc/20-cluster`, same
+`catalog_reader_enabled` switch). One Cost Management query and one forecast call per hour;
+Azure throttles after a few calls a minute, so do not lower `azureResources.cost.cacheTtlSeconds`
+much. Until the role exists the tab shows the backend's error (502 `AuthorizationFailed`).
+
+```sh
+kubectl -n openchoreo-control-plane logs deploy/backstage | grep -i "azure cost"   # "initialized", then "snapshot: N rows"
+```
+
+Console → Cost Insights → **Azure**: month to date, 30-day window, projection, resource groups
+and resources (names link to the catalog entities). Each Azure `Resource` entity page has an
+"Azure cost" card. Amounts are in the subscription's billing currency (NOK here), not USD.
 
 ## Check
 
