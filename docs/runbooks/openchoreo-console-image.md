@@ -134,6 +134,26 @@ shows the rendered definition, the install command, bundled files and example pr
 kubectl -n openchoreo-control-plane logs deploy/backstage | grep AiElements   # "registered", then "applied N entities"
 ```
 
+## MCP server for agents (ADR 0017)
+
+`POST https://console.openchoreo.<ip>.nip.io/api/openchoreo-ai-elements/mcp`, bearer token
+from `Secret/ai-elements-mcp` (generated in-cluster, `gitops/platform/openchoreo-secrets`).
+Tools: platform facts, catalog search/entity, skills, Azure resources, Azure cost,
+templates; every skill is a prompt (`/mcp__platform__<skill>` in Claude Code); the
+cloud-infra docs and gitops conventions are resources. OpenChoreo objects: use the API's own
+`/mcp`.
+
+```sh
+TOKEN=$(kubectl -n openchoreo-control-plane get secret ai-elements-mcp -o jsonpath='{.data.token}' | base64 -d)
+export NODE_EXTRA_CA_CERTS=~/.config/poc-root-ca.crt     # private CA, as for telemetry
+claude mcp add --transport http platform https://console.openchoreo.20.91.237.179.nip.io/api/openchoreo-ai-elements/mcp --header "Authorization: Bearer $TOKEN"
+claude mcp add --transport http openchoreo https://api.openchoreo.20.91.237.179.nip.io/mcp
+kubectl -n openchoreo-control-plane logs deploy/backstage | grep "MCP server"   # "enabled at /mcp (docs: ...; azure cost: yes)"
+```
+
+Rotate: delete `Secret/ai-elements-mcp`; External Secrets regenerates it on the next refresh
+and clients must be reconfigured.
+
 ## Check
 
 ```sh
