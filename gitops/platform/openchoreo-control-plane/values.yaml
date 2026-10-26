@@ -23,12 +23,13 @@ backstage:
   secretName: backstage-secrets   # ExternalSecret in gitops/platform/openchoreo-secrets
   # Console image from the fork (docs/runbooks/openchoreo-console-image.md): upstream
   # openchoreo-ui 1.3.1 plus the openchoreo-ai-usage-backend plugin (ADR 0013, 0014), the
-  # catalog-backend-module-azure-resources module (ADR 0015) and the openchoreo-azure-cost
-  # backend with the Cost Insights "Azure" tab (ADR 0016), pushed to the registry.
+  # catalog-backend-module-azure-resources module (ADR 0015), the openchoreo-azure-cost
+  # backend with the Cost Insights "Azure" tab (ADR 0016) and the catalog-backend-module-
+  # ai-elements module with the Skill kind pages (ADR 0017), pushed to the registry.
   # Tag = <chart version>-ai-usage.<fork sha>.
   image:
     repository: acrmadbadgerbadger.azurecr.io/openchoreo-ui
-    tag: 1.3.1-ai-usage.37a26354
+    tag: 1.3.1-ai-usage.d92fba25
   baseUrl: "https://console.openchoreo.20.91.237.179.nip.io"
   http:
     hostnames:
@@ -96,6 +97,15 @@ backstage:
       dataPlanes:
         - cluster: aks-cloudinfra-poc
           dataPlane: default
+    # AI elements in the catalog (ADR 0017): Claude Code skills, agents, prompts and hooks
+    # read from Git (SKILL.md frontmatter + metadata.json, no catalog-info needed) as `Skill`
+    # entities in the `ai` namespace, one System per repository. Public repositories need no
+    # token; add more repositories here as they appear.
+    aiElements:
+      repositories:
+        - url: https://github.com/eiriksf-capgemini/common-ai
+          title: Common AI
+          description: Agents, instructions, prompts, skills and hooks for GitHub Copilot and Claude Code, shared by AI developers at Capgemini Bergen.
 security:
   oidc:
     issuer: "https://thunder.openchoreo.20.91.237.179.nip.io"

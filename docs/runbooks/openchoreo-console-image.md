@@ -1,4 +1,4 @@
-# OpenChoreo console image (AI usage widget, Azure resources catalog module, Azure cost)
+# OpenChoreo console image (AI usage widget, Azure resources and cost, AI skills)
 
 Status as of 2026-10-25. Decisions in ADR 0013 (forked image), ADR 0014 (telemetry data
 source) and ADR 0015 (Azure resources in the catalog); this page is how to run, configure and
@@ -120,6 +120,19 @@ kubectl -n openchoreo-control-plane logs deploy/backstage | grep -i "azure cost"
 Console → Cost Insights → **Azure**: month to date, 30-day window, projection, resource groups
 and resources (names link to the catalog entities). Each Azure `Resource` entity page has an
 "Azure cost" card. Amounts are in the subscription's billing currency (NOK here), not USD.
+
+## AI skills in the catalog (ADR 0017)
+
+The image carries `catalog-backend-module-ai-elements`: every repository under
+`backstage.appConfig.aiElements.repositories` is read every 30 minutes (Backstage URL
+reader; public repositories need no token, private ones need `integrations.github[].token`
+from Key Vault) and its `skills/`, `agents/`, `prompts/` and `hooks/` become `Skill` entities
+in namespace `ai`, plus one `System` per repository. Catalog → kind **AI Skill**; each page
+shows the rendered definition, the install command, bundled files and example prompts.
+
+```sh
+kubectl -n openchoreo-control-plane logs deploy/backstage | grep AiElements   # "registered", then "applied N entities"
+```
 
 ## Check
 
