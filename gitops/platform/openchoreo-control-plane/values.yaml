@@ -32,6 +32,15 @@ backstage:
     repository: acrmadbadgerbadger.azurecr.io/openchoreo-ui
     tag: 1.3.1-ai-usage.6543b9b6
   baseUrl: "https://console.openchoreo.20.91.237.179.nip.io"
+  # The portal's SQLite files (catalog, AI usage rows of ADR 0014, auth keys, user settings)
+  # were on an emptyDir, so every pod restart wiped them (ADR 0015 consequences). One small
+  # Azure disk, default class (WaitForFirstConsumer; fine for a Deployment on one node).
+  database:
+    type: sqlite
+    sqlite:
+      persistence:
+        enabled: true
+        size: 2Gi
   http:
     hostnames:
       - console.openchoreo.20.91.237.179.nip.io
