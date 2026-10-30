@@ -1,7 +1,9 @@
 # ADR 0017: AI skills in the catalog, served to agents over MCP
 
 Date: 2026-10-25
-Status: Proposed
+Status: Accepted (2026-10-30). Steps 1-4 live since PR #29: 31 Skill entities and the System in the
+catalog; the MCP server verified through the ingress with the official client (8 tools, 31
+prompts, 61 resources). Step 5 (Thunder OAuth) is open.
 
 ## Context
 
@@ -132,4 +134,4 @@ Thunder OAuth should follow before any wider audience.
 | 2 | Portal page for the kind (list + detail) | fork | Done 2026-10-26 (fork commit d92fba25): "AI" kind category and icon, Type column, overview cards (rendered definition with source link; type/domain/license, install command, agent tools, hook events, bundled files; example prompts). 4 component tests |
 | 3 | `openchoreo-ai-elements-backend`: MCP Streamable HTTP, tools, per-skill prompts, bearer token; test with `claude mcp add --transport http` locally | fork | Done 2026-10-26 (fork commit after d92fba25): 8 tools (platform_facts, search_catalog, get_entity, list_skills, get_skill, azure_resources, list_templates, azure_cost), 31 prompts, docs and skill files as resources; verified with the official MCP client against a dev backend reading the live repos; 13 tests |
 | 4 | `Secret/ai-elements-mcp` generator, values (`aiElements`, token env), image, PR; `.mcp.json` in the `common-ai-platform` pack | this repo, common-ai | In this PR: generator + ExternalSecret, `AI_ELEMENTS_MCP_TOKEN`, `aiElements.mcp` with platform facts and two docs sources; common-ai gets a root `.mcp.json` (both servers, token from `PLATFORM_MCP_TOKEN`) since the packs do not exist yet |
-| 5 | Thunder OAuth for the Backstage MCP endpoint | fork, Thunder client | One login for both servers |
+| 5 | Thunder OAuth for the Backstage MCP endpoint | fork, Thunder client | Open. Until then the bearer token from `Secret/ai-elements-mcp` (runbook) |
