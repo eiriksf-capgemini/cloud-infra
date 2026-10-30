@@ -128,4 +128,4 @@ values for 1.3.1 and the fork):
 | 4 | Verify on the console: the AKS cluster is in the catalog, portal link works, relation to the data plane in both directions, search finds it | console | Screenshot in the PR; status of this ADR set to Accepted |
 | 5 | Open `azureResources.types` to the whole resource group; add the nodes RG; update the runbook with the new config block | this repo | All 23 resources visible; runbook updated |
 | 6 | (Later) Workload identity: flip the flag, UAMI + federated credential, SA annotation; remove Reader from the kubelet identity | `20-cluster`, values | Provider logs show the UAMI client id; kubelet identity back to AcrPull + Key Vault only |
-| 7 | (Separate, urgent for ADR 0014) PVC for `backstage-db` | chart value or kustomize patch | AI usage rows survive a pod restart |
+| 7 | (Separate, urgent for ADR 0014) PVC for `backstage-db` | chart value or kustomize patch | Done 2026-10-30: the chart has `backstage.database.sqlite.persistence.enabled`; 2 Gi Azure disk, default storage class. Rows written before the switch were already lost with the emptyDir |

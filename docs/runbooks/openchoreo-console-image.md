@@ -154,6 +154,14 @@ kubectl -n openchoreo-control-plane logs deploy/backstage | grep "MCP server"   
 Rotate: delete `Secret/ai-elements-mcp`; External Secrets regenerates it on the next refresh
 and clients must be reconfigured.
 
+## Portal database
+
+SQLite on a 2 Gi PVC (`backstage.database.sqlite.persistence`), so the AI usage rows, the
+catalog and user settings survive pod restarts. One replica only (ReadWriteOnce). To start
+from scratch, scale the Deployment to 0, delete the PVC `backstage-db`, scale back up. The Deployment
+keeps the default rolling update, which works on this one-node cluster (ReadWriteOnce binds
+per node); on several nodes switch it to Recreate.
+
 ## Check
 
 ```sh
