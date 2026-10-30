@@ -1,7 +1,9 @@
 # ADR 0016: Azure subscription cost in the console's Cost Insights
 
 Date: 2026-10-25
-Status: Proposed
+Status: Accepted (2026-10-30). Live on the console since PR #28; verified through the backend and the MCP
+`azure_cost` tool (month to date 140 NOK on 2026-10-30). The Azure tab itself was checked by the
+operator, not by the agent.
 
 ## Context
 
@@ -98,4 +100,4 @@ Facts (verified 2026-10-25 from the operator's laptop):
 | 2 | ADR 0015 provider: resource-group entities + `dependsOn` relations | fork | Done 2026-10-25 (fork commit 37a26354): groups from `resourcecontainers`, synthesized when that query fails |
 | 3 | Azure tab + entity cost card in the observability plugin; unit tests on the aggregation; local portal run with the dev backend | fork | Done 2026-10-25: tab, charts, tables, card; 9 component tests (181 in the plugin). Not rendered in a full local portal (needs the OpenChoreo API and IDP); verified on the console in step 5 |
 | 4 | `20-cluster`: Cost Management Reader for the kubelet identity (targeted apply, as in ADR 0015) | this repo | Code in `catalog_reader_enabled` (`kubelet_cost_reader`); `tofu plan -target=azurerm_role_assignment.kubelet_cost_reader` = 1 to add. **Apply pending** (operator) |
-| 5 | Image build and push, values bump, PR, verify on the console | this repo | Azure tab shows month-to-date and per-resource cost on the console |
+| 5 | Image build and push, values bump, PR, verify on the console | this repo | Done: PR #28 merged 2026-10-25; cost backend answers on the cluster via the kubelet identity (first call after a cold start can hit Cost Management's 429 and is served on retry) |
