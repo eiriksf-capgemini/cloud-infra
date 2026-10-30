@@ -23,12 +23,14 @@ backstage:
   secretName: backstage-secrets   # ExternalSecret in gitops/platform/openchoreo-secrets
   # Console image from the fork (docs/runbooks/openchoreo-console-image.md): upstream
   # openchoreo-ui 1.3.1 plus the openchoreo-ai-usage-backend plugin (ADR 0013, 0014), the
-  # catalog-backend-module-azure-resources module (ADR 0015) and the openchoreo-azure-cost
-  # backend with the Cost Insights "Azure" tab (ADR 0016), pushed to the registry.
+  # catalog-backend-module-azure-resources module (ADR 0015), the openchoreo-azure-cost
+  # backend with the Cost Insights "Azure" tab (ADR 0016), the catalog-backend-module-
+  # ai-elements module with the Skill kind pages and the openchoreo-ai-elements MCP server
+  # (ADR 0017), pushed to the registry.
   # Tag = <chart version>-ai-usage.<fork sha>.
   image:
     repository: acrmadbadgerbadger.azurecr.io/openchoreo-ui
-    tag: 1.3.1-ai-usage.37a26354
+    tag: 1.3.1-ai-usage.6543b9b6
   baseUrl: "https://console.openchoreo.20.91.237.179.nip.io"
   http:
     hostnames:
@@ -54,6 +56,13 @@ backstage:
       valueFrom:
         secretKeyRef:
           name: ai-usage-ingest
+          key: token
+          optional: true
+    # MCP server for agents (ADR 0017); token generated in-cluster like the ingest token.
+    - name: AI_ELEMENTS_MCP_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: ai-elements-mcp
           key: token
           optional: true
     - name: ANTHROPIC_ADMIN_API_KEY
@@ -96,6 +105,40 @@ backstage:
       dataPlanes:
         - cluster: aks-cloudinfra-poc
           dataPlane: default
+    # AI elements in the catalog (ADR 0017): Claude Code skills, agents, prompts and hooks
+    # read from Git (SKILL.md frontmatter + metadata.json, no catalog-info needed) as `Skill`
+    # entities in the `ai` namespace, one System per repository. Public repositories need no
+    # token; add more repositories here as they appear.
+    aiElements:
+      repositories:
+        - url: https://github.com/eiriksf-capgemini/common-ai
+          title: Common AI
+          description: Agents, instructions, prompts, skills and hooks for GitHub Copilot and Claude Code, shared by AI developers at Capgemini Bergen.
+      # MCP server (ADR 0017) at https://console.openchoreo.20.91.237.179.nip.io/api/openchoreo-ai-elements/mcp:
+      # catalog, Azure resources and cost, platform facts, every skill as a prompt, the docs
+      # below as resources. The token is substituted from Secret/ai-elements-mcp at start-up.
+      # OpenChoreo objects are served by openchoreo-api's own /mcp and are not repeated here.
+      mcp:
+        token: ${AI_ELEMENTS_MCP_TOKEN}
+        platformFacts:
+          cloud: Azure (Sweden Central), subscription bf235fd4-99f0-4ecb-9f89-5916f261844a
+          cluster: aks-cloudinfra-poc in rg-cloudinfra-poc (AKS 1.36, one Standard_B4s_v2 node, auto-stopped 17:00 and 22:00 Europe/Oslo)
+          gitopsRepo: https://github.com/eiriksf-capgemini/cloud-infra (Argo CD; gitops/apps/<namespace>/<app>/overlays/dev; see docs resources for conventions)
+          registry: acrmadbadgerbadger.azurecr.io (push after `az acr login`; images must be linux/amd64)
+          ingress: ingress-nginx on 20.91.237.179; hosts are <name>.20.91.237.179.nip.io; TLS from the POC private CA (cert-manager ClusterIssuer poc-ca, trust poc-root-ca.crt)
+          console: https://console.openchoreo.20.91.237.179.nip.io
+          openchoreoApi: https://api.openchoreo.20.91.237.179.nip.io (MCP for OpenChoreo objects at /mcp, OAuth via Thunder)
+          workloadDomain: openchoreoapis.20.91.237.179.nip.io
+          namespaces: platform (Argo CD, Tekton), demo (podinfo), sogeti, invent, i-and-d (team namespaces); OpenChoreo in openchoreo-control-plane / openchoreo-data-plane
+          scaleToZero: KEDA HTTP add-on; see gitops/apps/README.md (docs resource) for the HTTPScaledObject pattern
+          prsBy: GitHub App hal9000-agent-bot (scripts/gh-app-token.mjs), never the human login
+        docs:
+          - name: cloud-infra
+            title: cloud-infra ADRs, runbooks and reports
+            url: https://github.com/eiriksf-capgemini/cloud-infra/tree/main/docs
+          - name: cloud-infra-gitops
+            title: cloud-infra GitOps conventions
+            url: https://github.com/eiriksf-capgemini/cloud-infra/tree/main/gitops
 security:
   oidc:
     issuer: "https://thunder.openchoreo.20.91.237.179.nip.io"
