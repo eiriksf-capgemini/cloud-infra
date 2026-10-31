@@ -143,13 +143,16 @@ templates; every skill is a prompt (`/mcp__platform__<skill>` in Claude Code); t
 cloud-infra docs and gitops conventions are resources. OpenChoreo objects: use the API's own
 `/mcp`.
 
-Interactive clients log in through Thunder (OAuth, PKCE, dynamic client registration; the
-same login as the console), so no token needs to be copied:
+Interactive clients log in through Thunder (OAuth with PKCE; the same login as the console),
+so no token needs to be copied. Thunder does **not** allow anonymous dynamic client
+registration, so clients must name OpenChoreo's pre-registered public client
+`user_mcp_client` (Thunder bootstrap app "User MCP App", redirect URI
+`http://localhost:8075/callback`):
 
 ```sh
 export NODE_EXTRA_CA_CERTS=~/.config/poc-root-ca.crt     # private CA, as for telemetry
-claude mcp add --transport http platform https://console.openchoreo.20.91.237.179.nip.io/api/openchoreo-ai-elements/mcp
-claude mcp add --transport http openchoreo https://api.openchoreo.20.91.237.179.nip.io/mcp
+claude mcp add --transport http --client-id user_mcp_client --callback-port 8075 platform https://console.openchoreo.20.91.237.179.nip.io/api/openchoreo-ai-elements/mcp
+claude mcp add --transport http --client-id user_mcp_client --callback-port 8075 openchoreo https://api.openchoreo.20.91.237.179.nip.io/mcp
 # in Claude Code: /mcp → platform → Authenticate (browser opens Thunder)
 kubectl -n openchoreo-control-plane logs deploy/backstage | grep "MCP server"   # "enabled at /mcp (auth: shared token + OAuth via ...)"
 ```
