@@ -3,7 +3,7 @@
 Date: 2026-10-25
 Status: Accepted (2026-10-30). Steps 1-4 live since PR #29: 31 Skill entities and the System in the
 catalog; the MCP server verified through the ingress with the official client (8 tools, 31
-prompts, 61 resources). Step 5 (Thunder OAuth) is open.
+prompts, 61 resources). Step 5 (Thunder OAuth) landed 2026-10-30.
 
 ## Context
 
@@ -80,9 +80,9 @@ Facts (verified 2026-10-25):
      `/mcp__platform__<skill>` pulls a skill into a session on demand; bundled reference
      files as MCP **resources**.
    Auth: a bearer token generated in-cluster (`Secret/ai-elements-mcp`, External Secrets
-   `Password` generator, as ADR 0014) for the first iteration; Thunder OAuth with the same
-   protected-resource metadata as `openchoreo-api` as the follow-up, so one login covers both
-   servers. Reached through the existing console ingress and private CA.
+   `Password` generator, as ADR 0014) for non-interactive clients, and Thunder OAuth with the
+   same protected-resource metadata as `openchoreo-api` for interactive ones, so one login
+   covers both servers. Reached through the existing console ingress and private CA.
 4. **Claude Code configuration**: two servers, `openchoreo` (`/mcp` on the API, OAuth) and
    `platform` (the Backstage one); shipped in the `common-ai-platform` plugin's `.mcp.json`
    so installing the pack configures them.
@@ -134,4 +134,4 @@ Thunder OAuth should follow before any wider audience.
 | 2 | Portal page for the kind (list + detail) | fork | Done 2026-10-26 (fork commit d92fba25): "AI" kind category and icon, Type column, overview cards (rendered definition with source link; type/domain/license, install command, agent tools, hook events, bundled files; example prompts). 4 component tests |
 | 3 | `openchoreo-ai-elements-backend`: MCP Streamable HTTP, tools, per-skill prompts, bearer token; test with `claude mcp add --transport http` locally | fork | Done 2026-10-26 (fork commit after d92fba25): 8 tools (platform_facts, search_catalog, get_entity, list_skills, get_skill, azure_resources, list_templates, azure_cost), 31 prompts, docs and skill files as resources; verified with the official MCP client against a dev backend reading the live repos; 13 tests |
 | 4 | `Secret/ai-elements-mcp` generator, values (`aiElements`, token env), image, PR; `.mcp.json` in the `common-ai-platform` pack | this repo, common-ai | In this PR: generator + ExternalSecret, `AI_ELEMENTS_MCP_TOKEN`, `aiElements.mcp` with platform facts and two docs sources; common-ai gets a root `.mcp.json` (both servers, token from `PLATFORM_MCP_TOKEN`) since the packs do not exist yet |
-| 5 | Thunder OAuth for the Backstage MCP endpoint | fork, Thunder client | Open. Until then the bearer token from `Secret/ai-elements-mcp` (runbook) |
+| 5 | Thunder OAuth for the Backstage MCP endpoint | fork, Thunder client | Done 2026-10-30: the plugin verifies Thunder JWTs (JWKS, issuer, expiry; audience optional) next to the shared token, serves RFC 9728 metadata and the `WWW-Authenticate` challenge. Thunder advertises PKCE and dynamic client registration, which Claude Code's flow uses. Verified with a client-credentials token from the portal's service client; the interactive browser flow is verified by the operator on first connect |

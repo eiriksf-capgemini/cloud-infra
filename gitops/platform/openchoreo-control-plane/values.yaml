@@ -30,7 +30,7 @@ backstage:
   # Tag = <chart version>-ai-usage.<fork sha>.
   image:
     repository: acrmadbadgerbadger.azurecr.io/openchoreo-ui
-    tag: 1.3.1-ai-usage.6543b9b6
+    tag: 1.3.1-ai-usage.c39c7a90
   baseUrl: "https://console.openchoreo.20.91.237.179.nip.io"
   # The portal's SQLite files (catalog, AI usage rows of ADR 0014, auth keys, user settings)
   # were on an emptyDir, so every pod restart wiped them (ADR 0015 consequences). One small
@@ -128,7 +128,12 @@ backstage:
       # below as resources. The token is substituted from Secret/ai-elements-mcp at start-up.
       # OpenChoreo objects are served by openchoreo-api's own /mcp and are not repeated here.
       mcp:
+        # Shared token for non-interactive clients; interactive clients (Claude Code) log in
+        # through Thunder instead (ADR 0017 step 5): the plugin verifies Thunder's JWTs and
+        # serves the protected-resource metadata clients use to find the login flow.
         token: ${AI_ELEMENTS_MCP_TOKEN}
+        oauth:
+          issuer: https://thunder.openchoreo.20.91.237.179.nip.io
         platformFacts:
           cloud: Azure (Sweden Central), subscription bf235fd4-99f0-4ecb-9f89-5916f261844a
           cluster: aks-cloudinfra-poc in rg-cloudinfra-poc (AKS 1.36, one Standard_B4s_v2 node, auto-stopped 17:00 and 22:00 Europe/Oslo)
