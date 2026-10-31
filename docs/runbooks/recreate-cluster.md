@@ -12,7 +12,7 @@ Budget ~60 minutes with the cluster unreachable for ~30. Do it inside the auto-s
 
 ```sh
 cd /Users/eiriksf/code/cloud-infra && git pull            # main must contain ADR 0010
-make aks-status                                             # Running (start it if not)
+make aks-status                                             # Running (start it if not: make aks-start waits until the console answers)
 kubectl get applications -n platform | grep -v Synced       # nothing unexpected mid-sync
 az vm list-usage -l swedencentral -o table | grep -E 'Bsv2|cores'   # 2/4 before, 4/4 after
 ```

@@ -162,7 +162,8 @@ See [`docs/adr/0004-cost-controls.md`](docs/adr/0004-cost-controls.md).
   used: a node size change means recreating the cluster (`docs/runbooks/recreate-cluster.md`).
 - The cluster **auto-stops daily at 17:00 and again at 22:00 Europe/Oslo** (Azure
   Automation, free tier); the second stop catches evenings it was started for late work.
-  Start it with `make aks-start`, check with `make aks-status`, stop early with `make aks-stop`.
+  Start it with `make aks-start` (polls until the console answers and prints each stage), check
+  with `make aks-status` or `make aks-wait`, stop early with `make aks-stop`.
   Set `auto_start_time = "08:00"` in `20-cluster` tfvars for weekday auto-start, change the
   times with `auto_stop_times`, or set it to `[]` to disable auto-stop.
 - A **subscription budget alert** (default 500 in billing currency) is created by `00-tfstate`
