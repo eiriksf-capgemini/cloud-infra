@@ -1,0 +1,69 @@
+# Copy of install/k3d/single-cluster/values-openbao.yaml (openchoreo/openchoreo v1.3.1)
+# with every literal credential replaced by an `@@name@@` placeholder; secrets.sh renders it
+# into .rendered/ with generated values. Keep the structure identical to upstream.
+injector:
+  enabled: false
+
+server:
+  dev:
+    enabled: true
+    devRootToken: "@@BAO_ROOT_TOKEN@@"
+
+  postStart:
+    - /bin/sh
+    - -c
+    - |
+      sleep 5
+      export BAO_ADDR=http://127.0.0.1:8200
+      export BAO_TOKEN="@@BAO_ROOT_TOKEN@@"
+
+      bao auth enable kubernetes 2>/dev/null || true
+      bao write auth/kubernetes/config \
+        kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:443"
+
+      bao policy write openchoreo-secret-reader-policy - <<POLICY
+      path "secret/data/*" { capabilities = ["read"] }
+      path "secret/metadata/*" { capabilities = ["list", "read"] }
+      POLICY
+
+      bao policy write openchoreo-secret-writer-policy - <<POLICY
+      path "secret/data/*" { capabilities = ["create", "read", "update", "delete"] }
+      path "secret/metadata/*" { capabilities = ["create", "read", "update", "delete", "list"] }
+      POLICY
+
+      bao write auth/kubernetes/role/openchoreo-secret-reader-role \
+        bound_service_account_names=default \
+        bound_service_account_namespaces="dp*" \
+        policies=openchoreo-secret-reader-policy ttl=20m
+
+      bao write auth/kubernetes/role/openchoreo-secret-writer-role \
+        bound_service_account_names="*" \
+        bound_service_account_namespaces="openbao,openchoreo-workflow-plane" \
+        policies=openchoreo-secret-writer-policy ttl=20m
+
+      # Sample apps
+      bao kv put secret/npm-token value="fake-npm-token-for-development"
+      bao kv put secret/docker-username value="dev-user"
+      bao kv put secret/docker-password value="@@SAMPLE_PASSWORD@@"
+      bao kv put secret/github-pat value="fake-github-token-for-development"
+      bao kv put secret/username value="dev-user"
+      bao kv put secret/password value="@@SAMPLE_PASSWORD@@"
+
+      # Backstage (web console)
+      bao kv put secret/backstage-backend-secret value="@@BACKSTAGE_BACKEND_SECRET@@"
+      bao kv put secret/backstage-client-secret value="@@BACKSTAGE_CLIENT_SECRET@@"
+      bao kv put secret/backstage-jenkins-api-key value="placeholder-not-in-use"
+      bao kv put secret/backstage-github-actions-token value="placeholder-not-in-use"
+      bao kv put secret/backstage-github-oauth-client-secret value="placeholder-not-in-use"
+      # Observer (observability)
+      bao kv put secret/observer-oauth-client-secret value="@@OBSERVER_CLIENT_SECRET@@"
+      # RCA Agent (observability)
+      bao kv put secret/rca-oauth-client-secret value="@@RCA_CLIENT_SECRET@@"
+      # FinOps Agent (observability)
+      bao kv put secret/finops-agent-oauth-client-secret value="@@FINOPS_CLIENT_SECRET@@"
+      # OpenSearch (observability)
+      bao kv put secret/opensearch-username value="admin"
+      bao kv put secret/opensearch-password value="@@OPENSEARCH_PASSWORD@@"
+      # OpenObserve (observability)
+      bao kv put secret/openobserve-admin-email value="admin@openchoreo.localhost"
+      bao kv put secret/openobserve-admin-password value="@@OPENOBSERVE_PASSWORD@@"

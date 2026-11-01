@@ -132,6 +132,9 @@ live/<cloud>/<env>/ one directory per stack, each with its own state
 
 scripts/            helpers (country-prefixes.py regenerates the country allowlist; gh-app-token.mjs mints the agents' GitHub App token)
 
+local/kind/openchoreo/  the laptop flavour of the OpenChoreo install (ADR 0018): the same charts and console image on the
+                        kind cluster from platform-gitops; idempotent scripts, generated credentials, observability plane included
+
 gitops/             what Argo CD reconciles INTO the cluster
   clusters/azure-dev      Helm chart: platform Applications + workload ApplicationSet (environment: dev)
   apps/<namespace>/<app>/ workloads: kustomize base + overlays/{dev,test,prod}; every namespace
@@ -279,7 +282,12 @@ kubectl -n openchoreo-control-plane get certificate,job                   # CA i
 
 The getting-started sample (environments dev/staging/prod, a pipeline, the default project and
 component types) is installed from upstream, pinned to v1.3.1 (`gitops/platform/openchoreo-config`).
-Workflow and observability planes are not installed; see ADR 0010.
+Workflow and observability planes are not installed on AKS; see ADR 0010.
+
+The same install also runs on a laptop: [`local/kind/openchoreo/`](local/kind/openchoreo/)
+puts the same charts and console image, plus the observability plane, on the kind cluster
+that [platform-gitops](https://github.com/eiriksf-capgemini/platform-gitops) creates
+(ADR 0018). Credentials there are generated per install (`./secrets.sh show`).
 
 The portal's home page carries an **AI usage & cost** widget (ADR 0013, 0014): estimated
 Claude cost plus the signed-in user's token usage for the last day and the last 7 days, fed

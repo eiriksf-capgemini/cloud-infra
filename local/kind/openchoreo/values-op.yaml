@@ -1,0 +1,58 @@
+# OpenChoreo Observability Plane values for an EXISTING kind cluster.
+# Based on install/k3d/single-cluster/values-op.yaml (release-v1.3) with the
+# gateway pinned to a NodePort via GatewayParameters (see gateway-parameters.yaml).
+# The observer is reached as http://observer.openchoreo.localhost:11080 both from
+# the Mac (socat forwarder, start-lb.sh) and from pods (CoreDNS rewrite to this
+# plane's gateway Service, coredns.sh).
+
+observer:
+  secretName: observer-secret
+  controlPlaneApiUrl: "http://api.openchoreo.localhost:8080"
+  cors:
+    allowedOrigins:
+      - "http://openchoreo.localhost:8080"
+  extraEnvs:
+    - name: OBSERVER_BASE_URL
+      value: "http://observer.openchoreo.localhost:11080"
+    - name: AUTHZ_TIMEOUT
+      value: "30s"
+  http:
+    hostnames:
+      - observer.openchoreo.localhost
+
+security:
+  oidc:
+    jwksUrl: "http://thunder-service.thunder.svc.cluster.local:8090/oauth2/jwks"
+    tokenUrl: "http://thunder-service.thunder.svc.cluster.local:8090/oauth2/token"
+    authServerBaseUrl: "http://thunder.openchoreo.localhost:8080"
+
+# Optional agents, off by default upstream (1 Gi each). Hostnames are routed by
+# the CoreDNS rule already, so enabling them later is a values change only.
+rca:
+  openchoreoApiUrl: "http://api.openchoreo.localhost:8080"
+  cors:
+    allowedOrigins:
+      - "http://openchoreo.localhost:8080"
+  http:
+    hostnames:
+      - rca-agent.openchoreo.localhost
+finOpsAgent:
+  openchoreoApiUrl: "http://api.openchoreo.localhost:8080"
+  cors:
+    allowedOrigins:
+      - "http://openchoreo.localhost:8080"
+  http:
+    hostnames:
+      - finops-agent.openchoreo.localhost
+
+gateway:
+  httpPort: 11080
+  httpsPort: 11085
+  tls:
+    enabled: false
+  # kind-specific: NodePort 31080 (gateway-parameters.yaml, same namespace)
+  infrastructure:
+    parametersRef:
+      group: gateway.kgateway.dev
+      kind: GatewayParameters
+      name: openchoreo-kind

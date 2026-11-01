@@ -1,0 +1,21 @@
+# OpenChoreo Data Plane values for an EXISTING kind cluster.
+# Based on install/k3d/single-cluster/values-dp.yaml (release-v1.3).
+
+gateway:
+  httpPort: 19080
+  httpsPort: 19443
+  tls:
+    enabled: false
+  # kind-specific: pin the kgateway proxy Service to NodePort via GatewayParameters
+  infrastructure:
+    parametersRef:
+      group: gateway.kgateway.dev
+      kind: GatewayParameters
+      name: openchoreo-kind
+
+# `occ remote` SNI router. NodePort 30443 is published to the host by start-lb.sh.
+remoteAgentRouter:
+  enabled: true
+  service:
+    type: NodePort
+    nodePort: 30443

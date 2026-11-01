@@ -35,3 +35,9 @@ gitops/**/Chart.lock
 # GitHub App identity for coding agents (see README > Contributing); key lives outside the repo
 .gh-app-identity.json
 *.pem
+
+# local/kind/openchoreo: generated per install, never committed (see its README > Credentials)
+local/kind/openchoreo/.secrets.env
+local/kind/openchoreo/.rendered/
+local/kind/openchoreo/values-console.yaml
+local/kind/openchoreo/.coredns-corefile.backup

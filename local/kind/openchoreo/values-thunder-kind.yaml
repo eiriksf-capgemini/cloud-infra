@@ -1,0 +1,15 @@
+# kind-specific ThunderID overrides, layered on top of upstream/values-thunder.yaml.
+# Claude Code refuses to POST credentials to a plain-HTTP OAuth token endpoint unless
+# its hostname is literally localhost. `thunder.openchoreo.localhost` does not qualify,
+# so Thunder's public URL (token `iss` claim + authorization-server metadata) is
+# http://localhost:8080 and the HTTPRoute also answers for `localhost`. In-cluster
+# consumers keep using thunder.openchoreo.localhost (values-cp.yaml).
+httproute:
+  hostnames:
+    - thunder.openchoreo.localhost
+    - localhost
+configuration:
+  server:
+    publicUrl: "http://localhost:8080"
+  gateClient:
+    hostname: "localhost"
