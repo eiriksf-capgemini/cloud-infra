@@ -17,6 +17,10 @@ The fork is a local checkout (`~/code/openchoreo-backstage-plugins`) until it is
 intended home is `github.com/eiriksf-capgemini/openchoreo-backstage-plugins`. The image tag
 embeds the fork's short commit SHA, so a tag always names a reproducible source.
 
+To try a fork change before building the amd64 image for ACR, use the kind install
+(`local/kind/openchoreo/console.sh`, ADR 0018): it builds the same Dockerfile for the laptop,
+pushes to the local registry and deploys with the same chart values keys.
+
 ## Configure a reporter (each laptop, once)
 
 ```sh

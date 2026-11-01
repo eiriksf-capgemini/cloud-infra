@@ -1,0 +1,41 @@
+# kgateway GatewayParameters: make the Envoy proxy Services NodePort with fixed
+# node ports so a forwarder container (start-lb.sh) can publish them on the host.
+# Must live in the same namespace as the Gateway that references them.
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: GatewayParameters
+metadata:
+  name: openchoreo-kind
+  namespace: openchoreo-control-plane
+spec:
+  kube:
+    service:
+      type: NodePort
+      ports:
+        - port: 8080
+          nodePort: 30080
+---
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: GatewayParameters
+metadata:
+  name: openchoreo-kind
+  namespace: openchoreo-data-plane
+spec:
+  kube:
+    service:
+      type: NodePort
+      ports:
+        - port: 19080
+          nodePort: 30190
+---
+apiVersion: gateway.kgateway.dev/v1alpha1
+kind: GatewayParameters
+metadata:
+  name: openchoreo-kind
+  namespace: openchoreo-observability-plane
+spec:
+  kube:
+    service:
+      type: NodePort
+      ports:
+        - port: 11080
+          nodePort: 31080

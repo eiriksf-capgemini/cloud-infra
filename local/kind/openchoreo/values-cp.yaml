@@ -1,0 +1,55 @@
+# OpenChoreo Control Plane values for an EXISTING kind cluster.
+# Based on install/k3d/single-cluster/values-cp.yaml (release-v1.3), with the
+# kgateway Gateway switched to a fixed NodePort (see gateway-parameters.yaml)
+# because kind has no LoadBalancer and its host port mappings are fixed at
+# cluster creation time.
+
+openchoreoApi:
+  http:
+    hostnames:
+    - api.openchoreo.localhost
+  config:
+    server:
+      publicUrl: "http://api.openchoreo.localhost:8080"
+    remoteConnect:
+      # `occ remote` tunnels. NodePort 30443 on the data plane is published to
+      # the host by the forwarder container (start-lb.sh).
+      enabled: true
+      entrypointAddress: "127.0.0.1:30443"
+      agentImage:
+        tag: latest-dev
+
+backstage:
+  secretName: backstage-secrets
+  baseUrl: "http://openchoreo.localhost:8080"
+  http:
+    hostnames:
+    - openchoreo.localhost
+
+portalAssistant:
+  config:
+    observerApiUrl: "http://observer.openchoreo.localhost:11080"
+
+security:
+  oidc:
+    issuer: "http://localhost:8080"
+    jwksUrl: "http://thunder.openchoreo.localhost:8080/oauth2/jwks"
+    authorizationUrl: "http://localhost:8080/oauth2/authorize"
+    tokenUrl: "http://thunder.openchoreo.localhost:8080/oauth2/token"
+
+gateway:
+  httpPort: 8080
+  httpsPort: 8443
+  tls:
+    enabled: false
+  # kind-specific: pin the kgateway proxy Service to NodePort via GatewayParameters
+  # (same namespace as the Gateway). Rendered into Gateway.spec.infrastructure.
+  infrastructure:
+    parametersRef:
+      group: gateway.kgateway.dev
+      kind: GatewayParameters
+      name: openchoreo-kind
+
+features:
+  secretManagement:
+    enabled: true
