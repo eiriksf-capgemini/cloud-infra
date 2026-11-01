@@ -18,13 +18,6 @@ openchoreoApi:
       entrypointAddress: "127.0.0.1:30443"
       agentImage:
         tag: latest-dev
-    # Audit events go to the observability plane (observability.sh). Harmless
-    # before the plane exists; the API only emits once the plane resolves.
-    audit:
-      enabled: true
-      observabilityPlaneRef:
-        kind: ClusterObservabilityPlane
-        name: default
 
 backstage:
   secretName: backstage-secrets

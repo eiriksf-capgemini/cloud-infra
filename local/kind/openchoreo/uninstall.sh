@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
-# Remove everything install.sh added. CRDs (Gateway API, cert-manager, ESO, kgateway,
-# OpenChoreo, prometheus-operator) are left in place unless you pass --crds. The
-# generated credentials (.secrets.env) are kept so a re-install reuses them.
+# Remove everything install.sh added. CRDs are left in place unless you ask:
+#   --crds       OpenChoreo, kgateway and prometheus-operator CRDs (nothing else uses them)
+#   --all-crds   also Gateway API, cert-manager and External Secrets CRDs, which another
+#                tenant of the same cluster may depend on (platform-gitops shares it)
+# The generated credentials (.secrets.env) are kept so a re-install reuses them.
 set -uo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"; source ./env.sh
-REMOVE_CRDS=false; [[ "${1:-}" == "--crds" ]] && REMOVE_CRDS=true
+REMOVE_CRDS=false; REMOVE_SHARED_CRDS=false
+case "${1:-}" in
+  --crds) REMOVE_CRDS=true ;;
+  --all-crds) REMOVE_CRDS=true; REMOVE_SHARED_CRDS=true ;;
+  "") ;;
+  *) die "usage: $0 [--crds|--all-crds]" ;;
+esac
 
 log "Stopping host forwarder"; docker rm -f "$LB_CONTAINER" >/dev/null 2>&1 || true
 # Order matters: workloads and their Releases are torn down by the controller
@@ -62,8 +70,13 @@ H uninstall cert-manager -n cert-manager 2>/dev/null || true
 K delete ns external-secrets cert-manager --ignore-not-found --timeout=180s
 ./coredns.sh remove
 if $REMOVE_CRDS; then
-  log "Deleting CRDs"
-  # monitoring.coreos.com: prometheus-operator CRDs shipped by observability-metrics-prometheus
-  K get crd -o name | grep -E 'openchoreo\.dev|gateway\.networking\.k8s\.io|gateway\.kgateway\.dev|cert-manager\.io|external-secrets\.io|generators\.external-secrets\.io|monitoring\.coreos\.com' | xargs -r kubectl --context "$KCTX" delete
+  log "Deleting OpenChoreo, kgateway and prometheus-operator CRDs"
+  K get crd -o name | grep -E 'openchoreo\.dev|gateway\.kgateway\.dev|monitoring\.coreos\.com' | xargs -r kubectl --context "$KCTX" delete
+  if $REMOVE_SHARED_CRDS; then
+    log "Deleting Gateway API, cert-manager and External Secrets CRDs"
+    K get crd -o name | grep -E 'gateway\.networking\.k8s\.io|cert-manager\.io|external-secrets\.io|generators\.external-secrets\.io' | xargs -r kubectl --context "$KCTX" delete
+  else
+    warn "Gateway API, cert-manager and External Secrets CRDs left in place (shared cluster); --all-crds removes them"
+  fi
 fi
 ok "done"

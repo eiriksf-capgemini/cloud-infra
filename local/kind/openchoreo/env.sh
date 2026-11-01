@@ -42,7 +42,10 @@ SOCAT_IMAGE="${SOCAT_IMAGE:-alpine/socat:1.8.1.3}"   # host port forwarder (star
 # The kind-registry (platform-gitops/scripts/up.sh) must answer; images reach the
 # node only through it (repo policy: no kind load).
 registry_ok() { docker inspect kind-registry >/dev/null 2>&1 && curl -fs "http://${UI_REGISTRY}/v2/" >/dev/null 2>&1; }
-registry_has_tag() { curl -fs "http://${UI_REGISTRY}/v2/${UI_IMAGE_REPO}/tags/list" 2>/dev/null | grep -q "\"$1\""; }
+registry_has_tag() { # no curl | grep: under pipefail an early grep exit would fail the pipe
+  local tags; tags=$(curl -fs "http://${UI_REGISTRY}/v2/${UI_IMAGE_REPO}/tags/list" 2>/dev/null) || return 1
+  [[ $tags == *"\"$1\""* ]]
+}
 
 # Host ports published by the forwarder container -> kind node NodePorts
 CP_HTTP_PORT=8080;   CP_HTTP_NODEPORT=30080
@@ -65,11 +68,19 @@ die()  { printf '\033[1;31m ✗\033[0m %s\n' "$*" >&2; exit 1; }
 reset_failed_release() { # name ns
   local st revs
   st=$(H status "$1" -n "$2" -o json 2>/dev/null | python3 -c 'import sys,json; print(json.load(sys.stdin)["info"]["status"])' 2>/dev/null || true)
-  [[ $st == "failed" || $st == "pending-install" ]] || return 0
   revs=$(H history "$1" -n "$2" -o json 2>/dev/null | python3 -c 'import sys,json; print(len(json.load(sys.stdin)))' 2>/dev/null || echo 0)
-  if [[ $revs -le 1 ]]; then
-    warn "removing $st first-revision release $1 in $2"; H uninstall "$1" -n "$2" --wait >/dev/null 2>&1 || true
-  else
-    warn "release $1 in $2 is $st after $revs revisions; retrying the upgrade in place"
-  fi
+  case $st in
+    failed|pending-install)
+      if [[ $revs -le 1 ]]; then
+        warn "removing $st first-revision release $1 in $2"; H uninstall "$1" -n "$2" --wait >/dev/null 2>&1 || true
+      else
+        warn "release $1 in $2 is $st after $revs revisions; retrying the upgrade in place"
+      fi ;;
+    pending-upgrade|pending-rollback)
+      # An interrupted helm run (Ctrl-C during --wait) leaves this; upgrade --install
+      # would refuse with "another operation is in progress". Roll back to the last
+      # good revision first.
+      warn "release $1 in $2 is $st; rolling back before retrying"
+      H rollback "$1" -n "$2" --wait >/dev/null 2>&1 || true ;;
+  esac
 }

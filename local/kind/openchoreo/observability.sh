@@ -115,6 +115,9 @@ extraExtensions:
 exporters:
   opensearch:
     logs_index: k8s-events
+    # Daily indices (k8s-events-YYYY-MM-DD): the module's index template only
+    # matches k8s-events-*, a plain k8s-events index gets no mappings or retention.
+    logs_index_time_format: "yyyy-MM-dd"
     http:
       endpoint: https://opensearch:9200
       auth: {authenticator: basicauth/opensearch}
@@ -145,17 +148,18 @@ YAML
   code=""
   for _ in $(seq 1 30); do
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 3 "http://observer.openchoreo.localhost:${OP_HTTP_PORT}/health" || true)
-    [[ $code =~ ^(200|204|401)$ ]] && break; sleep 3
+    [[ $code == 200 ]] && break; sleep 3
   done
-  echo "  Observer HTTP (host): ${code:-n/a}"
-  K get clusterobservabilityplane default -o wide 2>/dev/null || true
-  ok "observability plane installed (namespace $OP_NS)"
+  [[ $code == 200 ]] || die "observer not reachable at http://observer.openchoreo.localhost:${OP_HTTP_PORT}/health (got '${code:-n/a}'); check the forwarder (start-lb.sh) and: kubectl --context $KCTX get pods -n $OP_NS"
+  K get clusterobservabilityplane default -o wide
+  ok "observability plane installed (namespace $OP_NS); observer answers 200"
 }
 
 remove() {
   log "Removing observability plane"
   K patch clusterdataplane default --type json -p '[{"op":"remove","path":"/spec/observabilityPlaneRef"}]' >/dev/null 2>&1 || true
-  K delete clusterobservabilityplane default --ignore-not-found --timeout=60s
+  # The CRD may already be gone (uninstall.sh --crds, control plane removed).
+  K delete clusterobservabilityplane default --ignore-not-found --timeout=60s 2>/dev/null || true
   for rel in observability-events-kubernetes observability-metrics-prometheus observability-traces-opensearch observability-logs-opensearch openchoreo-observability-plane; do
     H uninstall "$rel" -n "$OP_NS" 2>/dev/null || true
   done

@@ -24,7 +24,10 @@ security:
   oidc:
     jwksUrl: "http://thunder-service.thunder.svc.cluster.local:8090/oauth2/jwks"
     tokenUrl: "http://thunder-service.thunder.svc.cluster.local:8090/oauth2/token"
-    authServerBaseUrl: "http://thunder.openchoreo.localhost:8080"
+    # Thunder's public issuer on kind is http://localhost:8080 (values-thunder-kind.yaml);
+    # the observer advertises this in its OAuth protected-resource metadata, so it must
+    # match what the API and Thunder itself advertise or MCP clients cannot log in.
+    authServerBaseUrl: "http://localhost:8080"
 
 # Optional agents, off by default upstream (1 Gi each). Hostnames are routed by
 # the CoreDNS rule already, so enabling them later is a values change only.

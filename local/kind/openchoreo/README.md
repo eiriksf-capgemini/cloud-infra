@@ -47,7 +47,7 @@ BUILD_DOCKER_CONTEXT=desktop-linux ./console.sh   # build + push the fork consol
 ./secrets.sh show|render                  # the generated credentials; re-render upstream/ values
 ./start-lb.sh                             # (re)create the host port forwarder; no-op when unchanged
 ./coredns.sh apply|remove                 # the in-cluster DNS rewrite
-./uninstall.sh [--crds]                   # remove everything install.sh added
+./uninstall.sh [--crds|--all-crds]        # remove everything install.sh added (--all-crds: also the shared Gateway API / cert-manager / ESO CRDs)
 ```
 
 Run them from this directory. `env.sh` holds every tunable (context, namespaces, ports,
@@ -203,6 +203,11 @@ its bootstrap checks: `colima ssh -- sudo sysctl -w vm.max_map_count=262144`.
   refuses to point at a tag that is not in the registry.
 - `colima start` switches the active docker context to `colima`; the kind node, the
   `kind-registry` and the socat forwarder all live there.
+- The portal Deployment is patched to `strategy: Recreate` after every upgrade: its SQLite
+  lives on a ReadWriteOnce PVC and the chart's default RollingUpdate would run two writers.
+- `aiElements.mcp.oauth` sets no `audience`, so any Thunder-issued token is accepted by the
+  portal's MCP endpoint (the same as on AKS today). Register the MCP resource in Thunder and
+  set `audience` to close that; tracked as a follow-up in ADR 0018.
 - The platform is a laptop setup: plain HTTP, dev-mode OpenBao, demo users. Not for
   anything exposed beyond your machine.
 - Verified on kind v0.33 / Kubernetes v1.37 / Colima, 2026-10-20 (planes) and 2026-10-31

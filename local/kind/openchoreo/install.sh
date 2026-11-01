@@ -129,8 +129,20 @@ if [[ -f values-console.yaml ]]; then
   registry_has_tag "$CONSOLE_TAG" || die "values-console.yaml pins ${UI_IMAGE_REPO}:${CONSOLE_TAG} but the registry does not have it; run ./console.sh build (or delete values-console.yaml for the stock image)"
   EXTRA_CP_VALUES+=(--values values-console.yaml)
 fi
+# Audit events go to the observability plane; only configure them when it is installed
+# (the upstream quick start does the same), otherwise the API would reference a plane
+# that never exists.
+AUDIT_FLAGS=()
+[[ $WITH_OBSERVABILITY == true ]] && AUDIT_FLAGS=(--set openchoreoApi.config.audit.enabled=true
+  --set openchoreoApi.config.audit.observabilityPlaneRef.kind=ClusterObservabilityPlane
+  --set openchoreoApi.config.audit.observabilityPlaneRef.name=default)
 H upgrade --install openchoreo-control-plane "${OC_CHARTS}/openchoreo-control-plane" \
-  -n "$CP_NS" --version "$OPENCHOREO_VERSION" --values values-cp.yaml ${EXTRA_CP_VALUES[@]+"${EXTRA_CP_VALUES[@]}"} --server-side=false --timeout 30m >/dev/null
+  -n "$CP_NS" --version "$OPENCHOREO_VERSION" --values values-cp.yaml ${EXTRA_CP_VALUES[@]+"${EXTRA_CP_VALUES[@]}"} \
+  ${AUDIT_FLAGS[@]+"${AUDIT_FLAGS[@]}"} --server-side=false --timeout 30m >/dev/null
+# The portal keeps SQLite on a ReadWriteOnce PVC (values-console.yaml); the chart has no
+# strategy knob, and the default RollingUpdate would run two writers on the same files.
+# Helm's three-way merge leaves this field alone because the chart does not set it.
+K patch deployment backstage -n "$CP_NS" --type merge -p '{"spec":{"strategy":{"type":"Recreate","rollingUpdate":null}}}' >/dev/null
 # rollout status (not condition=Available): on a re-run the old pods keep the
 # Deployment Available while the new ones may still be pulling or crash-looping.
 for d in cluster-gateway openchoreo-api backstage; do

@@ -55,5 +55,8 @@ Rules the directory follows:
   fragment both consume. Until then, change both.
 - `local/kind/` is the first non-cloud tree in a repository shaped around `live/<cloud>/<env>`
   and `gitops/`; it is tooling, not a stack: no state, no Argo CD, no CI beyond shell syntax.
+- The portal MCP endpoint accepts any Thunder-issued token on both installs
+  (`aiElements.mcp.oauth.audience` unset). Follow-up: register the MCP resource in Thunder and
+  set the audience, here and in the AKS values.
 - The kind install's credentials differ from the AKS ones (ADR 0011's shared admin password
   is Key Vault-backed and does not exist on the laptop); `./secrets.sh show` prints them.
